@@ -1,0 +1,592 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciamento de Estoque - Catálogo Vortex{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque-responsive.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/estoque-styles.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Hero section com estatísticas gerais -->
+<div class="estoque-hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Estoque de Produtos</h1>
+            <p class="lead">Gerencie seu catálogo de produtos de forma simples e eficiente</p>
+        </div>
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="total-produtos">-</span>
+                    <span class="stat-label">Produtos</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="valor-estoque">-</span>
+                    <span class="stat-label">Valor em Estoque</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-exclamation-triangle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="produtos-baixo-estoque">-</span>
+                    <span class="stat-label">Baixo Estoque</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conteúdo principal com tabs -->
+<div class="container estoque-container">
+    <div class="estoque-navigation">
+        <ul class="nav nav-tabs" id="estoque-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="listar-tab" data-bs-toggle="tab" data-bs-target="#listar" type="button" role="tab" aria-controls="listar" aria-selected="true">
+                    <i class="bi bi-list-ul"></i> Listar Produtos
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="movimentacoes-tab" data-bs-toggle="tab" data-bs-target="#movimentacoes" type="button" role="tab" aria-controls="movimentacoes" aria-selected="false">
+                    <i class="bi bi-arrow-left-right"></i> Movimentações
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="cadastrar-tab" data-bs-toggle="tab" data-bs-target="#cadastrar" type="button" role="tab" aria-controls="cadastrar" aria-selected="false">
+                    <i class="bi bi-plus-circle"></i> Cadastrar Produto
+                </button>
+            </li>
+        </ul>
+
+        <!-- Barra de busca -->
+        <div class="search-wrapper">
+            <div class="search-input-wrapper">
+                <i class="bi bi-search"></i>
+                <input type="text" id="busca-produto" class="search-input" placeholder="Buscar produtos..." onkeyup="filtrarProdutos()">
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="estoque-content">
+        <!-- Tab de Listagem -->
+        <div class="tab-pane fade show active" id="listar" role="tabpanel" aria-labelledby="listar-tab">
+            <div class="filtros-container">
+                <div class="filtros-grupo">
+                    <label>Ordenar por:</label>
+                    <select id="ordem-produtos" class="select-estilizado" onchange="aplicarFiltros()">
+                        <option value="nome-asc">Nome (A-Z)</option>
+                        <option value="nome-desc">Nome (Z-A)</option>
+                        <option value="preco-asc">Menor Preço</option>
+                        <option value="preco-desc">Maior Preço</option>
+                        <option value="estoque-asc">Menor Estoque</option>
+                        <option value="estoque-desc">Maior Estoque</option>
+                        <option value="id-desc" selected>Mais Recentes</option>
+                    </select>
+                </div>
+                <div class="filtros-grupo">
+                    <label>Filtrar:</label>
+                    <div class="filtro-botoes">
+                        <button class="filtro-btn active" data-filtro="todos" onclick="filtrarPorCategoria('todos')">Todos</button>
+                        <button class="filtro-btn" data-filtro="baixo-estoque" onclick="filtrarPorCategoria('baixo-estoque')">Baixo Estoque</button>
+                        <button class="filtro-btn" data-filtro="sem-estoque" onclick="filtrarPorCategoria('sem-estoque')">Sem Estoque</button>
+                    </div>
+                </div>
+                <div class="filtros-grupo">
+                    <button id="btn-exportar-excel" class="btn btn-success btn-exportar" onclick="exportarEstoqueExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="produtos-grid" id="produtos-container">
+                <!-- Cards de produtos serão inseridos aqui via JS -->
+                <div class="loading-produtos">
+                    <div class="spinner-container">
+                        <div class="spinner"></div>
+                    </div>
+                    <p>Carregando produtos...</p>
+                </div>
+            </div>
+
+            <div class="paginacao-container">
+                <div class="paginacao" id="paginacao">
+                    <!-- Paginação será inserida via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab de Movimentações -->
+        <div class="tab-pane fade" id="movimentacoes" role="tabpanel" aria-labelledby="movimentacoes-tab">
+            <div class="row">
+                <div class="col-lg-5">
+                    <div class="card cadastro-card">
+                        <div class="card-body">
+                            <h2 class="card-title">Nova Movimentação</h2>
+                            <p class="card-subtitle">Registre entradas e saídas de produtos do estoque</p>
+
+                            <form id="form-movimentacao" class="cadastro-form">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="produto_id" name="produto_id" required>
+                                        <option value="" selected disabled>Selecione um produto</option>
+                                        <!-- Opções serão carregadas via JS -->
+                                    </select>
+                                    <label for="produto_id">Produto</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="tipo_movimentacao" name="tipo_movimentacao" required>
+                                        <option value="" selected disabled>Selecione o tipo</option>
+                                        <option value="entrada">Entrada (Compra)</option>
+                                        <option value="saida">Saída (Retirada)</option>
+                                    </select>
+                                    <label for="tipo_movimentacao">Tipo de Movimentação</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="quantidade" name="quantidade" placeholder="0" min="1" required>
+                                    <label for="quantidade">Quantidade</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="preco_unitario" name="preco_unitario" placeholder="0.00" required onkeyup="formatarMoeda(this)" onblur="validarValorMonetario(this)" data-tipo="moeda">
+                                    <label for="preco_unitario">Preço Unitário (R$)</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="data_movimentacao" name="data_movimentacao" required>
+                                    <label for="data_movimentacao">Data</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="observacao" name="observacao" placeholder="Observações sobre a movimentação" style="height: 100px"></textarea>
+                                    <label for="observacao">Observações</label>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="reset" class="btn btn-outline-primary">
+                                        <i class="bi bi-arrow-repeat"></i> Limpar Formulário
+                                    </button>
+                                    <button type="button" class="btn btn-primary" id="btn-registrar-movimentacao">
+                                        <i class="bi bi-check-circle"></i> Registrar Movimentação
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h2 class="card-title mb-0">Últimas Movimentações</h2>
+                                <div class="filtros-movimentacoes">
+                                    <select id="filtro-movimentacoes" class="form-select form-select-sm">
+                                        <option value="todos" selected>Todas as movimentações</option>
+                                        <option value="entrada">Apenas entradas</option>
+                                        <option value="saida">Apenas saídas</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover tabela-movimentacoes">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Produto</th>
+                                            <th>Tipo</th>
+                                            <th>Qtd</th>
+                                            <th>Valor Unit.</th>
+                                            <th>Valor Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabela-movimentacoes-body">
+                                        <!-- Linhas serão carregadas via JS -->
+                                        <tr>
+                                            <td colspan="6" class="text-center py-3">
+                                                <div class="spinner-border text-primary spinner-border-sm me-2" role="status">
+                                                    <span class="visually-hidden">Carregando...</span>
+                                                </div>
+                                                Carregando movimentações...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="paginacao-container mt-3">
+                                <div class="paginacao" id="paginacao-movimentacoes">
+                                    <!-- Paginação será inserida via JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab de Cadastro -->
+        <div class="tab-pane fade" id="cadastrar" role="tabpanel" aria-labelledby="cadastrar-tab">
+            <div class="card cadastro-card">
+                <div class="card-body">
+                    <h2 class="card-title">Adicionar Novo Produto</h2>
+                    <p class="card-subtitle">Preencha os dados do produto que deseja adicionar ao catálogo</p>
+
+                    <form id="form-produto" class="cadastro-form">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="nome" name="nome" placeholder="Nome do produto" required>
+                                    <label for="nome">Nome do Produto</label>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="text" class="form-control" id="preco" name="preco" placeholder="0.00" required onkeyup="formatarMoeda(this)" onblur="validarValorMonetario(this)" data-tipo="moeda">
+                                            <label for="preco">Preço (R$)</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            <input type="number" class="form-control" id="quantidade_estoque" name="quantidade_estoque" placeholder="0" min="0" required>
+                                            <label for="quantidade_estoque">Quantidade em Estoque</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="descricao" name="descricao" placeholder="Descrição detalhada do produto" style="height: 150px"></textarea>
+                                    <label for="descricao">Descrição do Produto</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="imagem-upload-container">
+                                    <div class="imagem-preview-wrapper" id="imagem-preview-wrapper">
+                                        <img id="imagem-preview" src="/static/images/produtos/placeholder.jpg" alt="Preview" class="imagem-preview">
+                                        <div class="imagem-placeholder">
+                                            <i class="bi bi-image"></i>
+                                            <span>Selecione uma imagem</span>
+                                        </div>
+                                    </div>
+                                    <div class="imagem-upload-controls">
+                                        <label for="imagem" class="btn-imagem-upload">
+                                            <i class="bi bi-upload"></i> Selecionar Imagem
+                                        </label>
+                                        <input type="file" class="imagem-input" id="imagem" name="imagem" accept="image/*" onchange="previewImagem()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="reset" class="btn btn-outline-primary" onclick="limparPreview()">
+                                <i class="bi bi-arrow-repeat"></i> Limpar Formulário
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-adicionar-produto">
+                                <i class="bi bi-plus-circle"></i> Adicionar Produto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização de Produto -->
+<div class="modal fade" id="visualizarProdutoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="visualizar-titulo">Detalhes do Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5">
+                        <div class="visualizar-imagem-container">
+                            <img id="visualizar-imagem" src="" alt="Imagem do produto" class="visualizar-imagem">
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <h2 id="visualizar-nome" class="mb-2"></h2>
+
+                        <div class="produto-info-badges mb-3">
+                            <span class="badge bg-primary" id="visualizar-id-badge">ID: <span id="visualizar-id"></span></span>
+                            <span class="badge" id="visualizar-estoque-badge">Estoque: <span id="visualizar-estoque"></span></span>
+                        </div>
+
+                        <div class="produto-preco mb-4">
+                            <span class="preco-label">Preço:</span>
+                            <span class="preco-valor">R$ <span id="visualizar-preco"></span></span>
+                        </div>
+
+                        <div class="produto-descricao">
+                            <h5>Descrição</h5>
+                            <p id="visualizar-descricao"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" onclick="excluirProdutoModal(visualizandoProdutoId, document.getElementById('visualizar-nome').textContent)">
+                    <i class="bi bi-trash"></i> Excluir
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="editarProdutoModal(visualizandoProdutoId)">
+                    <i class="bi bi-pencil"></i> Editar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição de Produto -->
+<div class="modal fade" id="editarProdutoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-editar-produto">
+                    <input type="hidden" id="editar-id">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="editar-nome" placeholder="Nome do produto" required>
+                                <label for="editar-nome">Nome do Produto</label>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="editar-preco" placeholder="0.00" required onkeyup="formatarMoeda(this)" onblur="validarValorMonetario(this)" data-tipo="moeda">
+                                        <label for="editar-preco">Preço (R$)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="number" class="form-control" id="editar-estoque" placeholder="0" min="0" required>
+                                        <label for="editar-estoque">Quantidade em Estoque</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="editar-descricao" placeholder="Descrição detalhada do produto" style="height: 150px"></textarea>
+                                <label for="editar-descricao">Descrição do Produto</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Imagem Atual</label>
+                                <div class="editar-imagem-preview">
+                                    <img id="editar-imagem-preview" src="" alt="Imagem atual" class="img-fluid rounded">
+                                </div>
+                                <div class="form-text">Para alterar a imagem, cadastre um novo produto com a imagem desejada.</div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="salvarEdicao()">
+                    <i class="bi bi-check-circle"></i> Salvar Alterações
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmarExclusaoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4 mt-2">
+                    <i class="bi bi-trash-fill text-danger exclusao-icon"></i>
+                </div>
+                <p class="text-center">Tem certeza que deseja excluir o produto:</p>
+                <p class="text-center fw-bold fs-5" id="produto-excluir-nome"></p>
+                <p class="text-center text-danger">
+                    Esta ação não pode ser desfeita.
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger px-4" onclick="confirmarExclusao()">
+                    <i class="bi bi-trash"></i> Excluir Produto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes da Movimentação -->
+<div class="modal fade" id="detalhesMovimentacaoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detalhes-movimentacao-titulo">Detalhes da Movimentação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Produto</h6>
+                            <p id="detalhes-produto" class="fs-5"></p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Tipo de Movimentação</h6>
+                            <span id="detalhes-tipo-badge" class="badge"></span>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Data e Hora</h6>
+                            <p id="detalhes-data"></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Quantidade</h6>
+                            <p id="detalhes-quantidade"></p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Valor Unitário</h6>
+                            <p id="detalhes-valor-unitario"></p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Valor Total</h6>
+                            <p id="detalhes-valor-total" class="fs-5 fw-bold"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6 class="fw-bold">Observações</h6>
+                    <p id="detalhes-observacao" class="p-2 bg-light rounded"></p>
+                </div>
+                <div class="mt-3">
+                    <h6 class="fw-bold">Estoque</h6>
+                    <div class="d-flex gap-4">
+                        <div>
+                            <span class="text-muted">Anterior:</span>
+                            <span id="detalhes-estoque-anterior" class="fw-bold ms-2"></span>
+                        </div>
+                        <div>
+                            <span class="text-muted">Atual:</span>
+                            <span id="detalhes-estoque-atual" class="fw-bold ms-2"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/estoque.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Adicionar manipulador de eventos para o botão de adicionar produto
+        document.getElementById('btn-adicionar-produto').addEventListener('click', adicionarProduto);
+        
+        // Função para adicionar produto via AJAX
+        async function adicionarProduto() {
+            // Verificar se o formulário é válido
+            const form = document.getElementById('form-produto');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Criar FormData para enviar dados e arquivo
+            const formData = new FormData(form);
+            
+            // Ajustar o valor do preço antes de enviar (remover formatação)
+            const precoFormatado = document.getElementById('preco').value;
+            const precoNumerico = extrairValorNumerico(precoFormatado);
+            formData.set('preco', precoNumerico);
+            
+            // Mostrar indicador de carregamento no botão
+            const btn = document.getElementById('btn-adicionar-produto');
+            const btnTexto = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+            btn.disabled = true;
+            
+            try {
+                // Enviar requisição para a API
+                const response = await fetch('/api/produtos', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.erro || 'Erro ao adicionar produto');
+                }
+                
+                const data = await response.json();
+                
+                // Mostrar mensagem de sucesso
+                mostrarNotificacao('success', 'Produto adicionado com sucesso!');
+                
+                // Limpar formulário
+                form.reset();
+                limparPreview();
+                
+                // Inicializar campos monetários novamente após reset
+                document.querySelectorAll('input[data-tipo="moeda"]').forEach(campo => {
+                    campo.value = 'R$ 0,00';
+                });
+                
+                // Recarregar produtos
+                await carregarProdutos();
+                
+                // Voltar para a aba de listagem
+                const listarTab = new bootstrap.Tab(document.getElementById('listar-tab'));
+                listarTab.show();
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                mostrarNotificacao('error', error.message);
+            } finally {
+                // Restaurar botão
+                btn.innerHTML = btnTexto;
+                btn.disabled = false;
+            }
+        }
+    });
+</script>
+{% endblock %}

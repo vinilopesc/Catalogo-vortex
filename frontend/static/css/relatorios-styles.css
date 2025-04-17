@@ -1,0 +1,449 @@
+/* Estilos para a página de Relatórios - Catálogo Vortex 
+ * Redesign moderno que mantém consistência com o restante do sistema
+ */
+
+:root {
+  /* Cores específicas para tipos de relatórios */
+  --relatorio-vendas-bg: rgba(13, 110, 253, 0.15);
+  --relatorio-vendas-color: #0d6efd;
+  --relatorio-estoque-bg: rgba(255, 193, 7, 0.15);
+  --relatorio-estoque-color: #c79500;
+  --relatorio-financeiro-bg: rgba(0, 200, 83, 0.15);
+  --relatorio-financeiro-color: #008c3a;
+  --relatorio-usuarios-bg: rgba(23, 162, 184, 0.15);
+  --relatorio-usuarios-color: #138496;
+}
+
+/* Hero section e cabeçalho */
+.relatorios-hero {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  color: white;
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+  border-radius: var(--border-radius);
+}
+
+.relatorios-hero h1 {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.relatorios-hero p {
+  opacity: 0.8;
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+/* Cards de tipos de relatórios */
+.relatorios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.relatorio-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: var(--card-border);
+  padding: 1.5rem;
+  transition: all var(--transition-speed);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Evita que o conteúdo extravase */
+}
+
+.relatorio-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-hover);
+}
+
+.relatorio-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.relatorio-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 1.5rem;
+  flex-shrink: 0; /* Impede que o ícone seja redimensionado */
+}
+
+.relatorio-icon.vendas {
+  background-color: var(--relatorio-vendas-bg);
+  color: var(--relatorio-vendas-color);
+}
+
+.relatorio-icon.estoque {
+  background-color: var(--relatorio-estoque-bg);
+  color: var(--relatorio-estoque-color);
+}
+
+.relatorio-icon.financeiro {
+  background-color: var(--relatorio-financeiro-bg);
+  color: var(--relatorio-financeiro-color);
+}
+
+.relatorio-icon.usuarios {
+  background-color: var(--relatorio-usuarios-bg);
+  color: var(--relatorio-usuarios-color);
+}
+
+.relatorio-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0;
+  white-space: nowrap; /* Evita quebra de linha no título */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adiciona ... se o texto for muito longo */
+}
+
+.relatorio-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.relatorio-card-body p {
+  color: var(--gray);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.relatorio-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.btn-relatorio {
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all var(--transition-speed);
+  white-space: nowrap; /* Evita quebra de linha no botão */
+}
+
+.btn-relatorio-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.btn-relatorio-primary:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.btn-relatorio-outline {
+  background-color: transparent;
+  border: 1px solid var(--gray-light);
+  color: var(--gray-dark);
+}
+
+.btn-relatorio-outline:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Filtros do relatório */
+.filtros-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  border: var(--card-border);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+}
+
+.filtros-card h5 {
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filtros-card h5 i {
+  opacity: 0.7;
+}
+
+.filtros-form-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--gray-dark);
+}
+
+.filtros-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filtro-item {
+  flex: 1;
+  min-width: 200px;
+}
+
+.btn-gerar-relatorio {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--transition-speed);
+  white-space: nowrap; /* Evita quebra de linha no botão */
+}
+
+.btn-gerar-relatorio:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.btn-reset-filtros {
+  background-color: transparent;
+  border: 1px solid var(--gray-light);
+  color: var(--gray-dark);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--transition-speed);
+  white-space: nowrap; /* Evita quebra de linha no botão */
+}
+
+.btn-reset-filtros:hover {
+  border-color: var(--gray);
+  color: var(--dark);
+}
+
+/* Visualização de relatório */
+.report-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  border: var(--card-border);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.report-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Permite quebra em telas pequenas */
+  gap: 1rem; /* Espaçamento quando quebrar */
+}
+
+.report-title {
+  font-weight: 600;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.report-title i {
+  opacity: 0.7;
+}
+
+.report-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.report-body {
+  padding: 1.5rem;
+}
+
+.report-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+}
+
+.summary-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray);
+  margin-bottom: 0.5rem;
+}
+
+.summary-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+/* Tabelas de relatórios */
+.report-table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.report-table th {
+  font-weight: 600;
+  color: var(--gray-dark);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  padding: 1rem;
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.report-table td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.report-table tbody tr {
+  transition: background-color var(--transition-speed);
+}
+
+.report-table tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.report-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Gráficos */
+.chart-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  border: var(--card-border);
+  box-shadow: var(--box-shadow);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.chart-title {
+  font-weight: 600;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-title i {
+  opacity: 0.7;
+}
+
+.chart-options {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chart-body {
+  height: 300px;
+  position: relative;
+}
+
+/* Spinner de carregamento */
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.spinner-grow {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+  .report-table-container {
+    overflow-x: auto;
+  }
+  
+  .report-table th,
+  .report-table td {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .relatorios-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .report-actions {
+    flex-direction: column;
+  }
+  
+  .report-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.relatorio-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.relatorio-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.relatorio-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.relatorio-card:nth-child(4) {
+  animation-delay: 0.3s;
+} 

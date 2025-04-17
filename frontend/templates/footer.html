@@ -1,0 +1,145 @@
+<!-- Rodapé padrão para todas as páginas do Catálogo Vortex -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-logo">
+            <h3>Vortex<span class="highlight">Dev</span></h3>
+            <p>Soluções em Tecnologia</p>
+        </div>
+        <div class="footer-contact">
+            <a href="https://wa.me/5538997333538" target="_blank" class="contact-icon" title="WhatsApp">
+                <i class="bi bi-whatsapp"></i>
+            </a>
+            <a href="https://www.instagram.com/vortex.dev.ia/" target="_blank" class="contact-icon" title="Instagram">
+                <i class="bi bi-instagram"></i>
+            </a>
+            <a href="mailto:contato@vortexdev.com.br" class="contact-icon" title="Email">
+                <i class="bi bi-envelope"></i>
+            </a>
+        </div>
+    </div>
+    <div class="footer-copyright">
+        <p>&copy; {{ current_year if current_year else '2023' }} Vortex Development. Todos os direitos reservados.</p>
+    </div>
+</footer>
+
+<!-- Estilos específicos para o rodapé -->
+<style>
+    footer {
+        background: linear-gradient(135deg, var(--primary-color-light) 0%, var(--primary-color) 100%);
+        color: white;
+        padding: 20px 0 8px;
+        margin-top: 0; /* Removido margin-top pois agora o footer é controlado pelo layout flex */
+        font-family: var(--font-family-sans-serif);
+        box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+        width: 100%;
+    }
+
+    .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 20px 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .footer-logo h3 {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        margin-bottom: 0;
+    }
+
+    .footer-logo .highlight {
+        color: var(--secondary-color);
+        font-weight: 300;
+    }
+
+    .footer-logo p {
+        font-size: 12px;
+        opacity: 0.7;
+        margin-top: 2px;
+        margin-bottom: 0;
+    }
+
+    .footer-contact {
+        display: flex;
+        gap: 10px;
+    }
+
+    .contact-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transition: all 0.2s ease;
+    }
+
+    .contact-icon i {
+        color: white;
+        font-size: 15px;
+    }
+
+    .contact-icon:hover {
+        background-color: var(--secondary-color);
+        transform: translateY(-2px);
+    }
+
+    .footer-copyright {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 10px 20px;
+        text-align: center;
+        font-size: 11px;
+        opacity: 0.7;
+    }
+
+    .footer-copyright p {
+        margin-bottom: 0;
+    }
+
+    /* Ícones de redes sociais com cores suaves */
+    .footer-contact .contact-icon i.bi-whatsapp {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .footer-contact .contact-icon i.bi-instagram {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .footer-contact .contact-icon i.bi-envelope {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .footer-content {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+            padding-bottom: 10px;
+        }
+
+        .footer-contact {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .footer-logo h3 {
+            font-size: 18px;
+        }
+
+        .footer-logo p {
+            font-size: 11px;
+        }
+
+        .footer-copyright {
+            font-size: 10px;
+        }
+    }
+</style> 

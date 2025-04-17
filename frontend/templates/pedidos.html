@@ -1,0 +1,1114 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos - Catálogo Vortex{% endblock %}
+
+{% block styles %}
+<style>
+    .pedidos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .pedido-card {
+        border-radius: var(--border-radius);
+        border: var(--card-border);
+        box-shadow: var(--box-shadow);
+        transition: all var(--transition-speed);
+        overflow: hidden;
+        height: 100%;
+        background-color: white;
+    }
+    
+    .pedido-card:hover {
+        box-shadow: var(--box-shadow-hover);
+        transform: translateY(-5px);
+    }
+    
+    .pedido-header {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .pedido-header .pedido-id {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .pedido-body {
+        padding: 1rem;
+    }
+    
+    .pedido-info {
+        margin-bottom: 0.75rem;
+    }
+    
+    .pedido-info-label {
+        font-weight: 500;
+        color: var(--gray);
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 0.2rem;
+    }
+    
+    .pedido-info-value {
+        font-weight: 600;
+        color: var(--dark);
+    }
+    
+    .pedido-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .pedido-status {
+        padding: 0.35rem 0.65rem;
+        border-radius: 50rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .pedido-status.pendente {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #c79500;
+    }
+    
+    .pedido-status.concluido {
+        background-color: rgba(0, 200, 83, 0.2);
+        color: #008c3a;
+    }
+    
+    /* Filtros avançados */
+    .filtros-pedidos {
+        transition: max-height 0.3s ease-in-out;
+        overflow: hidden;
+    }
+    
+    .filtros-pedidos.collapsed {
+        max-height: 0;
+    }
+    
+    .filtros-pedidos.expanded {
+        max-height: 500px;
+    }
+    
+    .filtro-trigger {
+        cursor: pointer;
+    }
+    
+    /* Detalhes Modal */
+    .modal-header.pendente {
+        background-color: rgba(255, 193, 7, 0.2);
+    }
+    
+    .modal-header.concluido {
+        background-color: rgba(0, 200, 83, 0.2);
+    }
+    
+    .item-pedido {
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .item-pedido:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Cabeçalho da Página -->
+    <header class="mb-4">
+        <h1 class="display-5 mb-1">Gerenciamento de Pedidos</h1>
+        <p class="lead text-secondary">Visualize e gerencie todos os pedidos do sistema</p>
+    </header>
+
+    <!-- Card de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="card border-0 bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-1 opacity-75">Total de Pedidos</h6>
+                    <h3 class="card-title mb-0" id="total-pedidos">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="card border-0 bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-1 opacity-75">Pedidos Pendentes</h6>
+                    <h3 class="card-title mb-0" id="pedidos-pendentes">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="card border-0 bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-1 opacity-75">Pedidos Concluídos</h6>
+                    <h3 class="card-title mb-0" id="pedidos-concluidos">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-secondary text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-1 opacity-75">Valor Total</h6>
+                    <h3 class="card-title mb-0" id="valor-total">R$ 0,00</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Filtros -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center filtro-trigger" 
+             data-bs-toggle="collapse" href="#collapseFilters" role="button" aria-expanded="false">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-funnel me-2"></i>Filtros Avançados
+            </h5>
+            <span class="expand-icon">
+                <i class="bi bi-chevron-down"></i>
+            </span>
+        </div>
+        <div class="collapse" id="collapseFilters">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Ordenar por</label>
+                        <select class="form-select" id="filtro-ordenacao">
+                            <option value="">Selecione...</option>
+                            <option value="data-recente">Mais Recentes</option>
+                            <option value="data-antiga">Mais Antigos</option>
+                            <option value="valor-alto">Maior Valor</option>
+                            <option value="valor-baixo">Menor Valor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="filtro-status">
+                            <option value="">Todos</option>
+                            <option value="Pendente">Pendentes</option>
+                            <option value="Concluído">Concluídos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Buscar por Nome</label>
+                        <input type="text" class="form-control" id="filtro-nome" placeholder="Nome do cliente">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Buscar por ID</label>
+                        <input type="number" class="form-control" id="filtro-id" placeholder="Número do pedido" min="1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Inicial</label>
+                        <input type="date" class="form-control" id="filtro-data-inicial">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Final</label>
+                        <input type="date" class="form-control" id="filtro-data-final">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Valor Mínimo</label>
+                        <input type="number" class="form-control" id="filtro-valor-min" placeholder="R$ 0,00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Valor Máximo</label>
+                        <input type="number" class="form-control" id="filtro-valor-max" placeholder="R$ 0,00">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-secondary me-2" onclick="limparFiltros()">
+                            <i class="bi bi-x-circle me-1"></i> Limpar
+                        </button>
+                        <button class="btn btn-primary" onclick="aplicarFiltros()">
+                            <i class="bi bi-search me-1"></i> Aplicar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nenhum Pedido Encontrado -->
+    <div id="sem-pedidos" class="alert alert-info d-none" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Nenhum pedido encontrado para os filtros selecionados.
+    </div>
+
+    <!-- Grade de Pedidos -->
+    <div id="pedidos-container" class="pedidos-grid">
+        <!-- Pedidos serão inseridos aqui via JavaScript -->
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Pedido -->
+<div class="modal fade" id="detalhesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detalhes-pedido">
+                    <!-- Detalhes do pedido serão inseridos aqui -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Fechar
+                </button>
+                <button type="button" class="btn btn-danger me-2" id="btn-excluir" onclick="confirmarExclusao()">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+                <button type="button" class="btn btn-success" id="btn-processar" onclick="processarPedido()">
+                    <i class="bi bi-check-circle me-1"></i>Marcar como Concluído
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmacaoExclusaoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir este pedido?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    Esta ação não pode ser desfeita.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let pedidos = [];
+    let pedidoIdAtual = null;
+    let filtros = {
+        status: '',
+        dataInicial: '',
+        dataFinal: '',
+        valorMin: '',
+        valorMax: '',
+        nome: '',
+        id: '',
+        ordenacao: 'data-recente'
+    };
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+        carregarPedidos();
+        
+        // Alternar ícone ao expandir/colapsar filtros
+        document.querySelector('.filtro-trigger').addEventListener('click', function() {
+            const icon = this.querySelector('.expand-icon i');
+            icon.classList.toggle('bi-chevron-down');
+            icon.classList.toggle('bi-chevron-up');
+        });
+    });
+
+    function formatarData(dataString) {
+        try {
+            // Converter data do formato DD/MM/YYYY HH:MM:SS para objeto Date
+            const [data, hora] = dataString.split(' ');
+            const [dia, mes, ano] = data.split('/');
+            const [horas, minutos] = hora.split(':');
+            const dataObj = new Date(ano, mes - 1, dia, horas, minutos);
+            
+            if (isNaN(dataObj.getTime())) {
+                return 'Data não disponível';
+            }
+            
+            return dataObj.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.error('Erro ao formatar data:', error);
+            return 'Data não disponível';
+        }
+    }
+
+    function converterDataParaComparacao(dataString) {
+        try {
+            // Converter data do formato DD/MM/YYYY HH:MM:SS para objeto Date
+            const [data, hora] = dataString.split(' ');
+            const [dia, mes, ano] = data.split('/');
+            const [horas, minutos] = hora.split(':');
+            return new Date(ano, mes - 1, dia, horas, minutos);
+        } catch (error) {
+            console.error('Erro ao converter data:', error);
+            return new Date(0); // Retorna data mínima em caso de erro
+        }
+    }
+
+    function normalizarTexto(texto) {
+        if (!texto) return '';
+        return texto.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\w\s]/gi, '');
+    }
+
+    function aplicarFiltros() {
+        // Coletar valores dos filtros
+        const valorMin = document.getElementById('filtro-valor-min').value;
+        const valorMax = document.getElementById('filtro-valor-max').value;
+        const dataInicial = document.getElementById('filtro-data-inicial').value;
+        const dataFinal = document.getElementById('filtro-data-final').value;
+        
+        // Verificar se a data inicial é superior à data final
+        if (dataInicial && dataFinal && dataInicial > dataFinal) {
+            // Mostrar toast com erro
+            const toastElement = document.getElementById('toast');
+            toastElement.querySelector('.toast-header i').className = 'bi bi-exclamation-triangle-fill text-danger me-2';
+            toastElement.querySelector('.toast-header strong').textContent = 'Erro nos Filtros';
+            toastElement.querySelector('.toast-body').textContent = 'A data inicial não pode ser posterior à data final';
+            toast.show();
+            return; // Interrompe a execução da função
+        }
+        
+        // Verificar se o valor mínimo é maior que o valor máximo
+        if (valorMin && valorMax && parseFloat(valorMin) > parseFloat(valorMax)) {
+            // Mostrar toast com erro
+            const toastElement = document.getElementById('toast');
+            toastElement.querySelector('.toast-header i').className = 'bi bi-exclamation-triangle-fill text-danger me-2';
+            toastElement.querySelector('.toast-header strong').textContent = 'Erro nos Filtros';
+            toastElement.querySelector('.toast-body').textContent = 'O valor mínimo não pode ser maior que o valor máximo';
+            toast.show();
+            return; // Interrompe a execução da função
+        }
+        
+        const nome = document.getElementById('filtro-nome').value;
+        
+        filtros = {
+            status: document.getElementById('filtro-status').value,
+            dataInicial: dataInicial,
+            dataFinal: dataFinal,
+            valorMin: valorMin,
+            valorMax: valorMax,
+            nome: nome,
+            id: document.getElementById('filtro-id').value,
+            ordenacao: document.getElementById('filtro-ordenacao').value || 'data-recente'
+        };
+
+        // Filtrar pedidos
+        let pedidosFiltrados = pedidos.filter(pedido => {
+            const dataPedido = converterDataParaComparacao(pedido.data_pedido);
+            const dataInicialFiltro = filtros.dataInicial ? new Date(filtros.dataInicial) : null;
+            const dataFinalFiltro = filtros.dataFinal ? new Date(filtros.dataFinal + 'T23:59:59') : null;
+            
+            // Calcular valor total do pedido
+            const valorTotal = pedido.produtos.reduce((total, produto) => {
+                const preco = produto.preco || 0;
+                const quantidade = produto.quantidade || 0;
+                return total + (preco * quantidade);
+            }, 0);
+
+            // Normalizar o nome do cliente e o termo de busca para comparação sem acentos
+            const nomeClienteNormalizado = normalizarTexto(pedido.cliente_nome);
+            const termoBuscaNormalizado = normalizarTexto(filtros.nome);
+
+            // Aplicar filtros
+            if (filtros.status && pedido.status !== filtros.status) return false;
+            if (filtros.dataInicial && dataPedido && dataPedido < dataInicialFiltro) return false;
+            if (filtros.dataFinal && dataPedido && dataPedido > dataFinalFiltro) return false;
+            if (filtros.valorMin && valorTotal < parseFloat(filtros.valorMin)) return false;
+            if (filtros.valorMax && valorTotal > parseFloat(filtros.valorMax)) return false;
+            if (filtros.nome && !nomeClienteNormalizado.includes(termoBuscaNormalizado)) return false;
+            if (filtros.id && pedido.id !== filtros.id && pedido.id !== filtros.id.toString()) return false;
+
+            return true;
+        });
+
+        // Aplicar ordenação
+        pedidosFiltrados.sort((a, b) => {
+            const valorA = a.produtos.reduce((total, produto) => total + ((produto.preco || 0) * (produto.quantidade || 0)), 0);
+            const valorB = b.produtos.reduce((total, produto) => total + ((produto.preco || 0) * (produto.quantidade || 0)), 0);
+
+            switch (filtros.ordenacao) {
+                case 'data-recente':
+                    return parseInt(b.id) - parseInt(a.id); // Ordena pelo ID (mais recente primeiro)
+                case 'data-antiga':
+                    return parseInt(a.id) - parseInt(b.id); // Ordena pelo ID (mais antigo primeiro)
+                case 'valor-alto':
+                    return valorB - valorA;
+                case 'valor-baixo':
+                    return valorA - valorB;
+                default:
+                    return parseInt(b.id) - parseInt(a.id); // Padrão: mais recentes primeiro
+            }
+        });
+
+        // Exibir pedidos filtrados
+        exibirPedidos(pedidosFiltrados);
+
+        // Mostrar toast com resultado da filtragem
+        const toastElement = document.getElementById('toast');
+        toastElement.querySelector('.toast-header i').className = 'bi bi-funnel-fill text-primary me-2';
+        toastElement.querySelector('.toast-header strong').textContent = 'Filtros Aplicados';
+        toastElement.querySelector('.toast-body').textContent = `Encontrados ${pedidosFiltrados.length} pedido(s)`;
+        toast.show();
+    }
+
+    function limparFiltros() {
+        // Limpar campos
+        document.getElementById('filtro-status').value = '';
+        document.getElementById('filtro-data-inicial').value = '';
+        document.getElementById('filtro-data-final').value = '';
+        document.getElementById('filtro-valor-min').value = '';
+        document.getElementById('filtro-valor-max').value = '';
+        document.getElementById('filtro-nome').value = '';
+        document.getElementById('filtro-id').value = '';
+        document.getElementById('filtro-ordenacao').value = '';
+
+        // Resetar filtros
+        filtros = {
+            status: '',
+            dataInicial: '',
+            dataFinal: '',
+            valorMin: '',
+            valorMax: '',
+            nome: '',
+            id: '',
+            ordenacao: 'data-recente'
+        };
+
+        // Exibir todos os pedidos
+        exibirPedidos(pedidos);
+
+        // Mostrar toast informando que os filtros foram limpos
+        const toastElement = document.getElementById('toast');
+        toastElement.querySelector('.toast-header i').className = 'bi bi-x-circle-fill text-secondary me-2';
+        toastElement.querySelector('.toast-header strong').textContent = 'Filtros Limpos';
+        toastElement.querySelector('.toast-body').textContent = 'Todos os filtros foram removidos';
+        toast.show();
+    }
+
+    async function carregarPedidos() {
+        try {
+            const response = await fetch('/api/pedidos');
+            if (!response.ok) {
+                throw new Error('Erro ao carregar pedidos');
+            }
+            pedidos = await response.json();
+            
+            // Aplicar ordenação padrão (mais recentes) usando o ID
+            pedidos.sort((a, b) => {
+                return parseInt(b.id) - parseInt(a.id);
+            });
+            
+            exibirPedidos(pedidos);
+        } catch (error) {
+            console.error('Erro:', error);
+            document.getElementById('pedidos-container').innerHTML = `
+                <div class="alert alert-danger">
+                    Erro ao carregar pedidos. Por favor, tente novamente.
+                </div>
+            `;
+        }
+    }
+
+    function exibirPedidos(pedidosParaExibir) {
+        const container = document.getElementById('pedidos-container');
+        
+        if (!pedidosParaExibir || pedidosParaExibir.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                    <h3>Nenhum pedido encontrado</h3>
+                    <p class="text-muted">Tente ajustar os filtros para ver mais resultados.</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = pedidosParaExibir.map(pedido => {
+            // Verificar se os produtos existem e calcular o total
+            const produtos = pedido.produtos || [];
+            const valorTotal = produtos.reduce((total, produto) => {
+                const preco = produto.preco || 0;
+                const quantidade = produto.quantidade || 0;
+                return total + (preco * quantidade);
+            }, 0);
+
+            return `
+            <div class="card pedido-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Pedido #${pedido.id.padStart(4, '0')}</h5>
+                        <small class="text-muted">${formatarData(pedido.data_pedido)}</small>
+                    </div>
+                    <span class="badge ${getStatusBadgeClass(pedido.status)}">${pedido.status}</span>
+                </div>
+                <div class="card-body">
+                    <div class="pedido-resumo">
+    <!-- Modal de Detalhes do Pedido -->
+    <div class="modal fade" id="detalhesModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes do Pedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detalhes-pedido">
+                        <!-- Detalhes do pedido serão inseridos aqui -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-success" style="background-color: #198754; border-color: #198754;" id="btn-processar" onclick="processarPedido()">
+                        Marcar como Concluído
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div class="modal fade" id="confirmacaoExclusaoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Confirmar Exclusão
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Tem certeza que deseja excluir este pedido?</p>
+                    <p class="text-danger mb-0">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        Esta ação não pode ser desfeita.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao">
+                        <i class="bi bi-trash me-2"></i>Excluir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de Notificação -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong class="me-auto">Sucesso</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Pedido processado com sucesso!
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let pedidos = [];
+        let filtros = {
+            status: '',
+            dataInicial: '',
+            dataFinal: '',
+            valorMin: '',
+            valorMax: '',
+            nome: '',
+            id: '',
+            ordenacao: 'data-recente'
+        };
+
+        function formatarData(dataString) {
+            try {
+                // Converter data do formato DD/MM/YYYY HH:MM:SS para objeto Date
+                const [data, hora] = dataString.split(' ');
+                const [dia, mes, ano] = data.split('/');
+                const [horas, minutos] = hora.split(':');
+                const dataObj = new Date(ano, mes - 1, dia, horas, minutos);
+                
+                if (isNaN(dataObj.getTime())) {
+                    return 'Data não disponível';
+                }
+                
+                return dataObj.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                console.error('Erro ao formatar data:', error);
+                return 'Data não disponível';
+            }
+        }
+
+        function converterDataParaComparacao(dataString) {
+            try {
+                // Converter data do formato DD/MM/YYYY HH:MM:SS para objeto Date
+                const [data, hora] = dataString.split(' ');
+                const [dia, mes, ano] = data.split('/');
+                const [horas, minutos] = hora.split(':');
+                return new Date(ano, mes - 1, dia, horas, minutos);
+            } catch (error) {
+                console.error('Erro ao converter data:', error);
+                return new Date(0); // Retorna data mínima em caso de erro
+            }
+        }
+
+        function normalizarTexto(texto) {
+            if (!texto) return '';
+            return texto.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^\w\s]/gi, '');
+        }
+
+        function aplicarFiltros() {
+            // Coletar valores dos filtros
+            const valorMin = document.getElementById('filtro-valor-min').value;
+            const valorMax = document.getElementById('filtro-valor-max').value;
+            const dataInicial = document.getElementById('filtro-data-inicial').value;
+            const dataFinal = document.getElementById('filtro-data-final').value;
+            
+            // Verificar se a data inicial é superior à data final
+            if (dataInicial && dataFinal && dataInicial > dataFinal) {
+                // Mostrar toast com erro
+                const toastElement = document.getElementById('toast');
+                toastElement.querySelector('.toast-header i').className = 'bi bi-exclamation-triangle-fill text-danger me-2';
+                toastElement.querySelector('.toast-header strong').textContent = 'Erro nos Filtros';
+                toastElement.querySelector('.toast-body').textContent = 'A data inicial não pode ser posterior à data final';
+                toast.show();
+                return; // Interrompe a execução da função
+            }
+            
+            // Verificar se o valor mínimo é maior que o valor máximo
+            if (valorMin && valorMax && parseFloat(valorMin) > parseFloat(valorMax)) {
+                // Mostrar toast com erro
+                const toastElement = document.getElementById('toast');
+                toastElement.querySelector('.toast-header i').className = 'bi bi-exclamation-triangle-fill text-danger me-2';
+                toastElement.querySelector('.toast-header strong').textContent = 'Erro nos Filtros';
+                toastElement.querySelector('.toast-body').textContent = 'O valor mínimo não pode ser maior que o valor máximo';
+                toast.show();
+                return; // Interrompe a execução da função
+            }
+            
+            const nome = document.getElementById('filtro-nome').value;
+            
+            filtros = {
+                status: document.getElementById('filtro-status').value,
+                dataInicial: dataInicial,
+                dataFinal: dataFinal,
+                valorMin: valorMin,
+                valorMax: valorMax,
+                nome: nome,
+                id: document.getElementById('filtro-id').value,
+                ordenacao: document.getElementById('filtro-ordenacao').value || 'data-recente'
+            };
+
+            // Filtrar pedidos
+            let pedidosFiltrados = pedidos.filter(pedido => {
+                const dataPedido = converterDataParaComparacao(pedido.data_pedido);
+                const dataInicialFiltro = filtros.dataInicial ? new Date(filtros.dataInicial) : null;
+                const dataFinalFiltro = filtros.dataFinal ? new Date(filtros.dataFinal + 'T23:59:59') : null;
+                
+                // Calcular valor total do pedido
+                const valorTotal = pedido.produtos.reduce((total, produto) => {
+                    const preco = produto.preco || 0;
+                    const quantidade = produto.quantidade || 0;
+                    return total + (preco * quantidade);
+                }, 0);
+
+                // Normalizar o nome do cliente e o termo de busca para comparação sem acentos
+                const nomeClienteNormalizado = normalizarTexto(pedido.cliente_nome);
+                const termoBuscaNormalizado = normalizarTexto(filtros.nome);
+
+                // Aplicar filtros
+                if (filtros.status && pedido.status !== filtros.status) return false;
+                if (filtros.dataInicial && dataPedido && dataPedido < dataInicialFiltro) return false;
+                if (filtros.dataFinal && dataPedido && dataPedido > dataFinalFiltro) return false;
+                if (filtros.valorMin && valorTotal < parseFloat(filtros.valorMin)) return false;
+                if (filtros.valorMax && valorTotal > parseFloat(filtros.valorMax)) return false;
+                if (filtros.nome && !nomeClienteNormalizado.includes(termoBuscaNormalizado)) return false;
+                if (filtros.id && pedido.id !== filtros.id && pedido.id !== filtros.id.toString()) return false;
+
+                return true;
+            });
+
+            // Aplicar ordenação
+            pedidosFiltrados.sort((a, b) => {
+                const valorA = a.produtos.reduce((total, produto) => total + ((produto.preco || 0) * (produto.quantidade || 0)), 0);
+                const valorB = b.produtos.reduce((total, produto) => total + ((produto.preco || 0) * (produto.quantidade || 0)), 0);
+
+                switch (filtros.ordenacao) {
+                    case 'data-recente':
+                        return parseInt(b.id) - parseInt(a.id); // Ordena pelo ID (mais recente primeiro)
+                    case 'data-antiga':
+                        return parseInt(a.id) - parseInt(b.id); // Ordena pelo ID (mais antigo primeiro)
+                    case 'valor-alto':
+                        return valorB - valorA;
+                    case 'valor-baixo':
+                        return valorA - valorB;
+                    default:
+                        return parseInt(b.id) - parseInt(a.id); // Padrão: mais recentes primeiro
+                }
+            });
+
+            // Exibir pedidos filtrados
+            exibirPedidos(pedidosFiltrados);
+
+            // Mostrar toast com resultado da filtragem
+            const toastElement = document.getElementById('toast');
+            toastElement.querySelector('.toast-header i').className = 'bi bi-funnel-fill text-primary me-2';
+            toastElement.querySelector('.toast-header strong').textContent = 'Filtros Aplicados';
+            toastElement.querySelector('.toast-body').textContent = `Encontrados ${pedidosFiltrados.length} pedido(s)`;
+            toast.show();
+        }
+
+        function limparFiltros() {
+            // Limpar campos
+            document.getElementById('filtro-status').value = '';
+            document.getElementById('filtro-data-inicial').value = '';
+            document.getElementById('filtro-data-final').value = '';
+            document.getElementById('filtro-valor-min').value = '';
+            document.getElementById('filtro-valor-max').value = '';
+            document.getElementById('filtro-nome').value = '';
+            document.getElementById('filtro-id').value = '';
+            document.getElementById('filtro-ordenacao').value = '';
+
+            // Resetar filtros
+            filtros = {
+                status: '',
+                dataInicial: '',
+                dataFinal: '',
+                valorMin: '',
+                valorMax: '',
+                nome: '',
+                id: '',
+                ordenacao: 'data-recente'
+            };
+
+            // Exibir todos os pedidos
+            exibirPedidos(pedidos);
+
+            // Mostrar toast informando que os filtros foram limpos
+            const toastElement = document.getElementById('toast');
+            toastElement.querySelector('.toast-header i').className = 'bi bi-x-circle-fill text-secondary me-2';
+            toastElement.querySelector('.toast-header strong').textContent = 'Filtros Limpos';
+            toastElement.querySelector('.toast-body').textContent = 'Todos os filtros foram removidos';
+            toast.show();
+        }
+
+        async function carregarPedidos() {
+            try {
+                const response = await fetch('/api/pedidos');
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar pedidos');
+                }
+                pedidos = await response.json();
+                
+                // Aplicar ordenação padrão (mais recentes) usando o ID
+                pedidos.sort((a, b) => {
+                    return parseInt(b.id) - parseInt(a.id);
+                });
+                
+                exibirPedidos(pedidos);
+            } catch (error) {
+                console.error('Erro:', error);
+                document.getElementById('pedidos-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        Erro ao carregar pedidos. Por favor, tente novamente.
+                    </div>
+                `;
+            }
+        }
+
+        function exibirPedidos(pedidosParaExibir) {
+            const container = document.getElementById('pedidos-container');
+            
+            if (!pedidosParaExibir || pedidosParaExibir.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                        <h3>Nenhum pedido encontrado</h3>
+                        <p class="text-muted">Tente ajustar os filtros para ver mais resultados.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pedidosParaExibir.map(pedido => {
+                // Verificar se os produtos existem e calcular o total
+                const produtos = pedido.produtos || [];
+                const valorTotal = produtos.reduce((total, produto) => {
+                    const preco = produto.preco || 0;
+                    const quantidade = produto.quantidade || 0;
+                    return total + (preco * quantidade);
+                }, 0);
+
+                return `
+                <div class="card pedido-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Pedido #${pedido.id.padStart(4, '0')}</h5>
+                            <small class="text-muted">${formatarData(pedido.data_pedido)}</small>
+                        </div>
+                        <span class="badge ${getStatusBadgeClass(pedido.status)}">${pedido.status}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="pedido-resumo">
+                            <p class="mb-1"><strong>Cliente:</strong> ${pedido.cliente_nome || 'Nome não informado'}</p>
+                            <p class="mb-1"><strong>Telefone:</strong> ${pedido.cliente_telefone || 'Não informado'}</p>
+                            <p class="mb-2"><strong>Produtos:</strong> ${produtos.length} item(s)</p>
+                        </div>
+                        <p class="pedido-total mb-2">Total: R$ ${valorTotal.toFixed(2)}</p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <button class="btn btn-sm btn-outline-primary btn-detalhes" onclick="verDetalhes('${pedido.id}')">
+                            <i class="bi bi-eye"></i> Ver Detalhes
+                        </button>
+                        <div>
+                            ${pedido.status === 'Pendente' ? `
+                                <button class="btn btn-sm btn-primary" onclick="processarPedido('${pedido.id}')">
+                                    <i class="bi bi-check-circle"></i> Concluir
+                                </button>
+                            ` : `
+                                <button class="btn btn-sm btn-danger" onclick="excluirPedido('${pedido.id}')">
+                                    <i class="bi bi-trash"></i> Excluir
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'Pendente':
+                    return 'bg-warning';
+                case 'Concluído':
+                    return 'bg-success';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        let pedidoAtual = null;
+        const modalDetalhes = new bootstrap.Modal(document.getElementById('detalhesModal'));
+        const toast = new bootstrap.Toast(document.getElementById('toast'));
+        let pedidoParaExcluir = null;
+        const modalConfirmacaoExclusao = new bootstrap.Modal(document.getElementById('confirmacaoExclusaoModal'));
+
+        async function verDetalhes(pedidoId) {
+            try {
+                const response = await fetch('/api/pedidos');
+                const pedidos = await response.json();
+                pedidoAtual = pedidos.find(p => p.id === pedidoId);
+                
+                if (!pedidoAtual) {
+                    alert('Pedido não encontrado');
+                    return;
+                }
+
+                const detalhesPedido = document.getElementById('detalhes-pedido');
+                detalhesPedido.innerHTML = `
+                    <div class="mb-3">
+                        <h6>Informações do Cliente</h6>
+                        <p><strong>Nome:</strong> ${pedidoAtual.cliente_nome}</p>
+                        <p><strong>Telefone:</strong> ${pedidoAtual.cliente_telefone}</p>
+                        <p><strong>Endereço:</strong><br>${pedidoAtual.cliente_endereco.replace(/\n/g, '<br>')}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Produtos</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Produto</th>
+                                        <th>Quantidade</th>
+                                        <th>Preço Unit.</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${pedidoAtual.produtos.map(item => `
+                                        <tr>
+                                            <td>${item.nome || 'Produto não encontrado'}</td>
+                                            <td>${item.quantidade}</td>
+                                            <td>R$ ${(item.preco || 0).toFixed(2)}</td>
+                                            <td>R$ ${((item.preco || 0) * item.quantidade).toFixed(2)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Total do Pedido:</strong></td>
+                                        <td><strong>R$ ${pedidoAtual.produtos.reduce((total, item) => total + ((item.preco || 0) * item.quantidade), 0).toFixed(2)}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Informações do Pedido</h6>
+                        <p><strong>ID:</strong> #${pedidoAtual.id.padStart(4, '0')}</p>
+                        <p><strong>Data:</strong> ${pedidoAtual.data_pedido}</p>
+                        <p><strong>Status:</strong> ${pedidoAtual.status}</p>
+                    </div>
+                `;
+
+                // Mostrar/ocultar botão de processar baseado no status
+                const btnProcessar = document.getElementById('btn-processar');
+                btnProcessar.style.display = pedidoAtual.status === 'Pendente' ? 'block' : 'none';
+
+                modalDetalhes.show();
+            } catch (error) {
+                console.error('Erro ao carregar detalhes:', error);
+                alert('Erro ao carregar detalhes do pedido. Por favor, tente novamente.');
+            }
+        }
+
+        async function processarPedido(pedidoId) {
+            try {
+                const btnProcessar = document.getElementById('btn-processar');
+                btnProcessar.disabled = true;
+                btnProcessar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+
+                const response = await fetch(`/api/pedidos/${pedidoId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'Concluído' })
+                });
+
+                if (!response.ok) {
+                    const erro = await response.json();
+                    throw new Error(erro.erro || 'Erro ao concluir pedido');
+                }
+
+                // Fecha o modal e mostra o toast
+                modalDetalhes.hide();
+                
+                // Atualiza o toast com mensagem de sucesso
+                const toastElement = document.getElementById('toast');
+                toastElement.querySelector('.toast-header i').className = 'bi bi-check-circle-fill text-success me-2';
+                toastElement.querySelector('.toast-header strong').textContent = 'Sucesso';
+                toastElement.querySelector('.toast-body').textContent = 'Pedido concluído com sucesso!';
+                toast.show();
+                
+                // Recarrega a lista de pedidos após um pequeno delay
+                setTimeout(() => {
+                    carregarPedidos();
+                }, 500);
+
+            } catch (error) {
+                console.error('Erro ao concluir pedido:', error);
+                const btnProcessar = document.getElementById('btn-processar');
+                btnProcessar.disabled = false;
+                btnProcessar.innerHTML = 'Marcar como Concluído';
+                
+                // Mostra mensagem de erro no toast
+                const toastElement = document.getElementById('toast');
+                toastElement.querySelector('.toast-header i').className = 'bi bi-exclamation-circle-fill text-danger me-2';
+                toastElement.querySelector('.toast-header strong').textContent = 'Erro';
+                toastElement.querySelector('.toast-body').textContent = error.message;
+                toast.show();
+            }
+        }
+
+        async function excluirPedido(pedidoId) {
+            pedidoParaExcluir = pedidoId;
+            modalConfirmacaoExclusao.show();
+        }
+
+        // Adicionar evento de clique ao botão de confirmação
+        document.getElementById('btn-confirmar-exclusao').addEventListener('click', async () => {
+            if (!pedidoParaExcluir) return;
+
+            try {
+                const response = await fetch(`/api/pedidos/${pedidoParaExcluir}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const erro = await response.json();
+                    throw new Error(erro.erro || 'Erro ao excluir pedido');
+                }
+
+                // Fecha o modal de confirmação
+                modalConfirmacaoExclusao.hide();
+
+                // Mostra mensagem de sucesso no toast
+                const toastElement = document.getElementById('toast');
+                toastElement.querySelector('.toast-header i').className = 'bi bi-check-circle-fill text-success me-2';
+                toastElement.querySelector('.toast-header strong').textContent = 'Sucesso';
+                toastElement.querySelector('.toast-body').textContent = 'Pedido excluído com sucesso!';
+                toast.show();
+
+                // Recarrega a lista de pedidos
+                carregarPedidos();
+
+            } catch (error) {
+                console.error('Erro ao excluir pedido:', error);
+                
+                // Mostra mensagem de erro no toast
+                const toastElement = document.getElementById('toast');
+                toastElement.querySelector('.toast-header i').className = 'bi bi-exclamation-circle-fill text-danger me-2';
+                toastElement.querySelector('.toast-header strong').textContent = 'Erro';
+                toastElement.querySelector('.toast-body').textContent = error.message;
+                toast.show();
+            } finally {
+                pedidoParaExcluir = null;
+            }
+        });
+
+        // Carregar pedidos ao iniciar a página
+        document.addEventListener('DOMContentLoaded', () => {
+            // Definir ordenação padrão no select
+            document.getElementById('filtro-ordenacao').value = 'data-recente';
+            
+            // Carregar pedidos
+            carregarPedidos();
+        });
+    </script>
+</body>
+</html> {% endblock %}

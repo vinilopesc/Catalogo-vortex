@@ -1,0 +1,339 @@
+/* Estilos para a página de Pedidos - Catálogo Vortex 
+ * Redesign moderno que mantém consistência com o restante do sistema
+ */
+
+:root {
+  /* Cores específicas para a página de pedidos */
+  --pedido-pendente-bg: rgba(255, 193, 7, 0.15);
+  --pedido-pendente-color: #c79500;
+  --pedido-concluido-bg: rgba(0, 200, 83, 0.15);
+  --pedido-concluido-color: #008c3a;
+  --pedido-cancelado-bg: rgba(220, 53, 69, 0.15);
+  --pedido-cancelado-color: #bd2130;
+}
+
+/* Hero section e cabeçalho */
+.pedidos-hero {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  color: white;
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+  border-radius: var(--border-radius);
+}
+
+.pedidos-hero h1 {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.pedidos-hero p {
+  opacity: 0.8;
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+/* Cards de estatísticas */
+.stat-card {
+  border-radius: var(--border-radius);
+  padding: 1.25rem;
+  height: 100%;
+  border: none;
+  transition: all var(--transition-speed);
+  box-shadow: var(--box-shadow);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-hover);
+}
+
+.stat-card .stat-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  opacity: 0.8;
+}
+
+.stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.stat-card .stat-label {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filtros avançados */
+.filtros-container {
+  background-color: white;
+  border-radius: var(--border-radius);
+  border: var(--card-border);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.filtros-header {
+  padding: 1rem 1.5rem;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filtros-header:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.filtros-header h5 {
+  margin-bottom: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filtros-header .expand-icon {
+  transition: transform var(--transition-speed);
+}
+
+.filtros-header[aria-expanded="true"] .expand-icon {
+  transform: rotate(180deg);
+}
+
+.filtros-body {
+  padding: 1.5rem;
+}
+
+.filtro-form-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--gray-dark);
+}
+
+/* Grade de pedidos */
+.pedidos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.pedido-card {
+  border-radius: var(--border-radius);
+  border: var(--card-border);
+  box-shadow: var(--box-shadow);
+  transition: all var(--transition-speed);
+  overflow: hidden;
+  height: 100%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.pedido-card:hover {
+  box-shadow: var(--box-shadow-hover);
+  transform: translateY(-5px);
+}
+
+.pedido-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pedido-header .pedido-id {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.pedido-body {
+  padding: 1.25rem;
+  flex-grow: 1;
+}
+
+.pedido-info {
+  margin-bottom: 1rem;
+}
+
+.pedido-info:last-child {
+  margin-bottom: 0;
+}
+
+.pedido-info-label {
+  font-weight: 500;
+  color: var(--gray);
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.pedido-info-value {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.pedido-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pedido-status {
+  padding: 0.35rem 0.65rem;
+  border-radius: 50rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.pedido-status.pendente {
+  background-color: var(--pedido-pendente-bg);
+  color: var(--pedido-pendente-color);
+}
+
+.pedido-status.concluido {
+  background-color: var(--pedido-concluido-bg);
+  color: var(--pedido-concluido-color);
+}
+
+.pedido-status.cancelado {
+  background-color: var(--pedido-cancelado-bg);
+  color: var(--pedido-cancelado-color);
+}
+
+.pedido-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Modal de detalhes do pedido */
+.modal-pedido .modal-header {
+  align-items: center;
+  padding: 1.25rem;
+}
+
+.modal-pedido .modal-header.pendente {
+  background-color: var(--pedido-pendente-bg);
+}
+
+.modal-pedido .modal-header.concluido {
+  background-color: var(--pedido-concluido-bg);
+}
+
+.modal-pedido .modal-header.cancelado {
+  background-color: var(--pedido-cancelado-bg);
+}
+
+.modal-pedido .modal-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-pedido .modal-subtitle {
+  color: var(--gray);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.item-pedido {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+}
+
+.item-pedido:last-child {
+  border-bottom: none;
+}
+
+.item-pedido .item-img {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--border-radius);
+  object-fit: cover;
+  margin-right: 1rem;
+}
+
+.item-pedido .item-info {
+  flex-grow: 1;
+}
+
+.item-pedido .item-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.item-pedido .item-details {
+  font-size: 0.85rem;
+  color: var(--gray);
+}
+
+.item-pedido .item-price {
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .pedidos-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .item-pedido {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .item-pedido .item-img {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+  
+  .item-pedido .item-price {
+    margin-top: 0.5rem;
+    text-align: left;
+  }
+}
+
+/* Animações */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pedido-card {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.pedido-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.pedido-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.pedido-card:nth-child(4) {
+  animation-delay: 0.3s;
+} 

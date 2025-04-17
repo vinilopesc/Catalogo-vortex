@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "mediodonto",
+  "private_key_id": "4fd5980d0d1db653849325da9bd6a7cff1f2c13a",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCwPsL5ADT0fo6z\nCgHTtbDcKS0XClkKAzF5ZoS7Ll/IzjTjM7/q04p6lcW1ZhXqAFfRCunp0hf3yohv\nTy8YW4rp9kdOXZVbO+bRMs9Ntx2p3fZTh+AkOWA0a3BF1Atmk7+VRwurH/xrvZvB\nFBzxkN4qJJNwB7FYk1Qry/JA/LLQnhGy6Vhvvu+5AicTGa8rYr5kqpdZjbe/QTE2\nY1q62xpq38hr+a1qeUdke91IsqKi/d6gZPTdDp65ZAfii5pdbJpt12eFXFwjJrNi\nG4YwBXRvPd+XVCKXcywWD9F7pywuEVRyJ6mKCJ1wXEZ9cSBVEXdf35LNsLiq82eo\nbdr1LMjzAgMBAAECggEARhanddt5s7Nyr0uu/1D1hRBQ8KU6VIuBjMxSw5eFGve6\nO5J0Y3/9xZMzPVjcJSM+yRCkhkp5Ip8mE9HzIiYhf7pjkAwSXeZb+9zPaRIF12xA\nTeauoek5U49YZkSVxhTCryxCPSrquLP+MVH80qowV6UVBwvgIJ/ybLpd3C9CM0jI\nPfVvIXRM9Isfz2DP5wNXzkOwla8+xGldSesuYBqDN2M/+R962lwN/G9CNwdG3/48\nvx437EBOHYdOtwE6iPfP4jQ8xB54fIsnXb9v63DZbYFbFGqmacPVkLgjGsEKMS/2\nUTVwr8theIsSKGI+ZJV8iqZvvEu8l5Oz4me+w7XjIQKBgQDXalXUJz4IAC7lhwjV\naqAmrZUmDeNjQ6cZBApquWPjUO7H2UcPbRL1VB7a3xpAVl+zmJJ7OgeByInX9y8O\n0U1AsmNGnFt2rqVFwLPYFl2EKQTlfzdWvrZyrlv1DihLDdOA6b3cZcq82cmXBpIh\nLInE65zYEGSdY52rFiYaeaNdEwKBgQDRczbTT8NYgYTD+wtrv0PCxrEbVbcp5Ads\nH2KiZ6QP065c0Vnsu9wUYiS1xjFDUj16QDLxIh1QNNCyO2LlHf+gCrXlSy1vgsL5\nloOD+PgHKEfaMp3JniSwDHB5qIDM3BxgJpQHi0oRwrSL8Qo31MeDTfo+wIs99sC2\n28k3WvvAoQKBgHhNMlGg+MuPDqGwoAZP3dC78Ceoaeztw0v9LbQchORWNoP1m/HJ\ngGTx7aleH1L+6cNq2aNn7PlV/WVW7jjgOrx+42Jzv8CwGCy0SbvMAb3lCo8AVO9k\n4o95QHHCzk3cEtpTr2x+jJKbLjHhwYo1TVtkGduwjAA5ubvqSq1OcSVxAoGAUHkP\n64iN6Yd510KxVKicBE4K5hG82h9+qpA0eWmQo3QVXhwhjM9w83Px3tVTQCZs8HeS\nGwucb6CbPp+Kk7U+7eKvmHWV824uM28dAKu7wCQ91xvze++C8REWdefD9PHtBRRN\nc8iUoNZKQCpQXrsmHNDtAQdBeIFB8f/oA5i1eYECgYAFygueAeEPkrq17WrnlL72\n3TjFq+374P1n2CMadKfEfd2r66JNzueIgs7OhmrUcMX9xbs+Lwz4IvEzBl++atn3\nYv2LIgydewJrtmVJ7sWghGbPBglkFqirr8+mSZLtDOcRBF8XvYelnsIkFVGy13LO\nTcyKOAmCtatFc0DGNX/9PQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "gerenciador-drive-mediodonto@mediodonto.iam.gserviceaccount.com",
+  "client_id": "112630508196678386091",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/gerenciador-drive-mediodonto%40mediodonto.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

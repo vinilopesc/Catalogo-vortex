@@ -1,0 +1,302 @@
+/* Estilos comuns para todas as páginas - Catálogo Vortex 
+ * Define elementos de design padronizados para garantir consistência visual
+ */
+
+:root {
+  /* Cores principais */
+  --primary-color: #3f51b5;
+  --primary-color-light: #757de8;
+  --primary-color-dark: #002984;
+  --secondary-color: #ff9800;
+  --secondary-color-light: #ffc947;
+  --secondary-color-dark: #c66900;
+  
+  /* Cores de estado */
+  --success-color: #28a745;
+  --success-color-light: rgba(40, 167, 69, 0.15);
+  --warning-color: #ffc107;
+  --warning-color-light: rgba(255, 193, 7, 0.15);
+  --danger-color: #dc3545;
+  --danger-color-light: rgba(220, 53, 69, 0.15);
+  --info-color: #17a2b8;
+  --info-color-light: rgba(23, 162, 184, 0.15);
+  
+  /* Cores neutras */
+  --dark: #343a40;
+  --gray-dark: #495057;
+  --gray: #6c757d;
+  --gray-light: #ced4da;
+  --light: #f8f9fa;
+  
+  /* Configurações de elementos */
+  --border-radius: 0.5rem;
+  --card-border: 1px solid rgba(0, 0, 0, 0.05);
+  --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --box-shadow-hover: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  --transition-speed: 0.3s ease;
+  
+  /* Fontes */
+  --font-family-sans-serif: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+/* Reset e configurações básicas */
+body {
+  font-family: var(--font-family-sans-serif);
+  background-color: #f5f7fa;
+  color: var(--dark);
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+/* Container principal */
+.main-container {
+  padding: 2rem 0;
+  min-height: calc(100vh - 13rem); /* Altura total - (header + footer) */
+}
+
+/* Hero sections padronizadas */
+.page-hero {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-color-dark) 100%);
+  color: white;
+  padding: 2.5rem 0;
+  margin-bottom: 2rem;
+  border-radius: var(--border-radius);
+}
+
+.page-hero h1 {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.page-hero p {
+  opacity: 0.8;
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}
+
+/* Cards padronizados */
+.card-padrao {
+  background-color: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  border: var(--card-border);
+  padding: 1.5rem;
+  transition: all var(--transition-speed);
+  margin-bottom: 1.5rem;
+}
+
+.card-padrao:hover {
+  box-shadow: var(--box-shadow-hover);
+}
+
+/* Estatísticas */
+.stat-card {
+  border-radius: var(--border-radius);
+  padding: 1.25rem;
+  height: 100%;
+  border: none;
+  transition: all var(--transition-speed);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 1rem;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-hover);
+}
+
+.stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.stat-card .stat-label {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Filtros padronizados */
+.filtros-card {
+  background-color: white;
+  border-radius: var(--border-radius);
+  border: var(--card-border);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+}
+
+.filtros-card h5 {
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filtros-card h5 i {
+  opacity: 0.7;
+}
+
+.filtros-form-label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  color: var(--gray-dark);
+}
+
+/* Botões padronizados */
+.btn-padrao {
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all var(--transition-speed);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-padrao-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+}
+
+.btn-padrao-primary:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.btn-padrao-outline {
+  background-color: transparent;
+  border: 1px solid var(--gray-light);
+  color: var(--gray-dark);
+}
+
+.btn-padrao-outline:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Tabelas padronizadas */
+.tabela-padrao {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.tabela-padrao th {
+  font-weight: 600;
+  color: var(--gray-dark);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  padding: 1rem;
+  white-space: nowrap;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.tabela-padrao td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tabela-padrao tbody tr {
+  transition: background-color var(--transition-speed);
+}
+
+.tabela-padrao tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.01);
+}
+
+.tabela-padrao tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badge de status */
+.badge-status {
+  padding: 0.35rem 0.65rem;
+  border-radius: 50rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-block;
+}
+
+/* Spinner de carregamento */
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 0;
+}
+
+.spinner-grow {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+  .tabela-container {
+    overflow-x: auto;
+  }
+  
+  .tabela-padrao th,
+  .tabela-padrao td {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    padding: 1rem 0;
+  }
+  
+  .page-hero {
+    padding: 2rem 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .page-hero h1 {
+    font-size: 1.75rem;
+  }
+  
+  .page-hero p {
+    font-size: 1rem;
+  }
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+} 

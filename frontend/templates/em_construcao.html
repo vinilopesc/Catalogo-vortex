@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Em Construção - Catálogo Vortex{% endblock %}
+
+{% block styles %}
+<style>
+    .construcao-container {
+        padding: 5rem 0;
+        text-align: center;
+    }
+    
+    .construcao-icon {
+        font-size: 5rem;
+        color: var(--primary-color);
+        margin-bottom: 2rem;
+        animation: pulse 2s infinite;
+    }
+    
+    .construcao-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: var(--gray-dark);
+    }
+    
+    .construcao-message {
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        color: var(--gray);
+    }
+    
+    .progress {
+        max-width: 500px;
+        margin: 2rem auto;
+        height: 10px;
+        border-radius: 5px;
+    }
+    
+    .progress-bar {
+        background-color: var(--primary-color);
+        animation: progress-animation 2s;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+        50% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.8;
+        }
+    }
+    
+    @keyframes progress-animation {
+        0% {
+            width: 0%;
+        }
+        100% {
+            width: 40%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="construcao-container">
+        <div class="construcao-icon">
+            <i class="bi bi-tools"></i>
+        </div>
+        <h1 class="construcao-title">Módulo de Relatórios em Desenvolvimento</h1>
+        <p class="construcao-message">
+            Estamos trabalhando para trazer uma experiência completa de relatórios e análises para o seu negócio.
+            Esta funcionalidade estará disponível em breve com gráficos interativos e insights valiosos sobre suas vendas e estoque.
+        </p>
+        
+        <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        
+        <p class="text-muted mt-2">Progresso: 40% concluído</p>
+        
+        <div class="mt-4">
+            <a href="/" class="btn btn-primary">
+                <i class="bi bi-house me-2"></i>Voltar para a Página Inicial
+            </a>
+        </div>
+        
+        <div class="mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-graph-up text-primary mb-3" style="font-size: 2rem;"></i>
+                            <h5>Relatórios de Vendas</h5>
+                            <p class="text-muted small">Análise detalhada de vendas por período, produto e cliente.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-bar-chart text-primary mb-3" style="font-size: 2rem;"></i>
+                            <h5>Análise de Desempenho</h5>
+                            <p class="text-muted small">Métricas de crescimento e comparação com períodos anteriores.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center py-4">
+                            <i class="bi bi-clipboard-data text-primary mb-3" style="font-size: 2rem;"></i>
+                            <h5>Previsões e Tendências</h5>
+                            <p class="text-muted small">Projeções futuras baseadas em dados históricos de vendas.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

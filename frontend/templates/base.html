@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Catálogo Vortex{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Google Fonts - Roboto -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Estilos comuns -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Estilos específicos da página -->
+    {% if request.path == '/' %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home-styles.css') }}">
+    {% elif '/estoque' in request.path %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estoque-styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estoque-responsive.css') }}">
+    {% elif '/lista_pedidos' in request.path %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pedidos-styles.css') }}">
+    {% elif '/listar_usuarios' in request.path %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/usuarios-styles.css') }}">
+    {% elif '/relatorios' in request.path %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/relatorios-styles.css') }}">
+    {% endif %}
+    
+    <!-- Estilos adicionais específicos da página -->
+    {% block styles %}{% endblock %}
+    
+    <style>
+        /* Estilos para garantir o footer no final da página */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f5f7fa;
+        }
+        
+        .main-container {
+            flex: 1 0 auto; /* Isso faz com que o conteúdo principal ocupe todo o espaço disponível */
+            width: 100%;
+            padding-bottom: 20px; /* Espaço entre o conteúdo e o footer */
+        }
+        
+        footer {
+            flex-shrink: 0; /* Impede que o footer encolha */
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Componente de cabeçalho -->
+    {% include 'header.html' %}
+    
+    <!-- Conteúdo principal -->
+    <main class="main-container">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Componente de rodapé -->
+    {% include 'footer.html' %}
+    
+    <!-- Bootstrap JS com Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- jQuery (necessário para alguns componentes) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Scripts comuns -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Scripts específicos da página -->
+    {% if '/estoque' in request.path %}
+    <script src="{{ url_for('static', filename='js/estoque.js') }}"></script>
+    {% elif '/lista_pedidos' in request.path %}
+    <script src="{{ url_for('static', filename='js/pedidos.js') }}"></script>
+    {% elif '/listar_usuarios' in request.path %}
+    <script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
+    {% elif '/relatorios' in request.path %}
+    <script src="{{ url_for('static', filename='js/relatorios.js') }}"></script>
+    {% endif %}
+    
+    <!-- Scripts adicionais específicos da página -->
+    {% block scripts %}{% endblock %}
+    
+    <!-- Notificações Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        {% for message in get_flashed_messages(with_categories=true) %}
+        <div class="toast align-items-center text-white bg-{{ message[0] }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    {{ message[1] }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

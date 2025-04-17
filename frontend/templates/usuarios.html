@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - Catálogo Vortex{% endblock %}
+
+{% block styles %}
+<style>
+    .usuarios-card {
+        border-radius: var(--border-radius);
+        border: var(--card-border);
+        box-shadow: var(--box-shadow);
+        background-color: white;
+        transition: all var(--transition-speed);
+    }
+    
+    .usuarios-card:hover {
+        box-shadow: var(--box-shadow-hover);
+    }
+    
+    .table-responsive {
+        border-radius: var(--border-radius);
+        overflow: hidden;
+    }
+    
+    .table th {
+        background-color: rgba(0, 0, 0, 0.03);
+        font-weight: 600;
+        color: var(--gray-dark);
+        border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .table td, .table th {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+    
+    .table tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .user-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+    
+    .user-type {
+        padding: 0.35rem 0.65rem;
+        border-radius: 50rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        display: inline-block;
+    }
+    
+    .user-type.admin {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: #bd2130;
+    }
+    
+    .user-type.gerente {
+        background-color: rgba(0, 123, 255, 0.2);
+        color: #0062cc;
+    }
+    
+    .user-type.vendedor {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: #1e7e34;
+    }
+    
+    .user-type.cliente {
+        background-color: rgba(108, 117, 125, 0.2);
+        color: #555b61;
+    }
+    
+    .user-type.dev {
+        background-color: rgba(111, 66, 193, 0.2);
+        color: #563d7c;
+    }
+    
+    .form-floating .form-label {
+        opacity: 0.65;
+    }
+    
+    /* Animação para novo usuário */
+    @keyframes highlight-row {
+        0% {
+            background-color: rgba(0, 123, 255, 0.2);
+        }
+        100% {
+            background-color: transparent;
+        }
+    }
+    
+    .highlight-animation {
+        animation: highlight-row 2s ease-out;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Cabeçalho da Página - Hero section -->
+    <div class="page-hero usuarios-hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-1">Gerenciamento de Usuários</h1>
+                    <p class="lead">Cadastre e gerencie todos os usuários do sistema</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <button type="button" class="btn btn-padrao btn-light" data-bs-toggle="modal" data-bs-target="#adicionarUsuarioModal">
+                        <i class="bi bi-person-plus me-1"></i>Novo Usuário
+            </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card de Estatísticas -->
+        <div class="row mb-4">
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="stat-card bg-primary text-white">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-value" id="total-usuarios">0</div>
+                <div class="stat-label">Total de Usuários</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="stat-card bg-info text-white">
+                <div class="stat-icon">
+                    <i class="bi bi-person-badge"></i>
+                </div>
+                <div class="stat-value" id="total-gerentes">0</div>
+                <div class="stat-label">Gerentes</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3 mb-md-0">
+            <div class="stat-card bg-success text-white">
+                <div class="stat-icon">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <div class="stat-value" id="total-vendedores">0</div>
+                <div class="stat-label">Vendedores</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-secondary text-white">
+                <div class="stat-icon">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="stat-value" id="total-clientes">0</div>
+                <div class="stat-label">Clientes</div>
+            </div>
+            </div>
+        </div>
+        
+    <!-- Filtros e Busca -->
+    <div class="filtros-card mb-4">
+        <h5><i class="bi bi-funnel"></i> Filtros</h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="busca-usuario" placeholder="Nome, email ou ID">
+                    <label for="busca-usuario">Buscar usuário</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" id="filtro-tipo">
+                        <option value="">Todos os tipos</option>
+                        <option value="gerente">Gerentes</option>
+                        <option value="vendedor">Vendedores</option>
+                        <option value="cliente">Clientes</option>
+                        <option value="admin">Administradores</option>
+                        <option value="dev">Desenvolvedores</option>
+                    </select>
+                    <label for="filtro-tipo">Filtrar por tipo</label>
+                    </div>
+                    </div>
+            <div class="col-md-3">
+                <div class="form-floating">
+                    <select class="form-select" id="filtro-status">
+                        <option value="">Todos os status</option>
+                        <option value="ativo">Ativos</option>
+                        <option value="inativo">Inativos</option>
+                    </select>
+                    <label for="filtro-status">Filtrar por status</label>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-stretch">
+                <button class="btn btn-padrao btn-padrao-primary w-100" onclick="aplicarFiltros()">
+                    <i class="bi bi-search me-1"></i>Buscar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabela de Usuários -->
+    <div class="usuarios-table-container">
+                <div class="table-responsive">
+            <table class="tabela-padrao usuarios-table">
+                <thead>
+                            <tr>
+                        <th scope="col">#</th>
+                                <th scope="col">Nome</th>
+                        <th scope="col">E-mail</th>
+                                <th scope="col">Tipo</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                <tbody id="usuarios-tbody">
+                    <!-- Os usuários serão adicionados aqui via JavaScript -->
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="spinner-grow text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <p class="text-muted mt-2">Carregando usuários...</p>
+                        </td>
+                    </tr>
+                        </tbody>
+                    </table>
+        </div>
+    </div>
+
+    <!-- Mensagem Sem Resultados -->
+    <div id="sem-resultados" class="alert alert-info mt-3 d-none" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Nenhum usuário encontrado para os filtros selecionados.
+    </div>
+</div>
+
+<!-- Modal para Adicionar Usuário -->
+<div class="modal fade modal-usuario" id="adicionarUsuarioModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-plus me-2"></i>
+                    Adicionar Novo Usuário
+                </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                <form id="form-adicionar-usuario">
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">Nome completo</label>
+                            <input type="text" class="form-control" id="nome" required>
+                        </div>
+                        <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                        <label for="senha" class="form-label">Senha</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="senha" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleSenha('senha')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipo" class="form-label">Tipo de usuário</label>
+                            <select class="form-select" id="tipo" required>
+                            <option value="">Selecione...</option>
+                            <option value="cliente">Cliente</option>
+                            <option value="vendedor">Vendedor</option>
+                            {% if session['usuario_tipo'] == 'gerente' or session['usuario_tipo'] == 'admin' or session['usuario_tipo'] == 'dev' %}
+                                <option value="gerente">Gerente</option>
+                            {% endif %}
+                            {% if session['usuario_tipo'] == 'admin' or session['usuario_tipo'] == 'dev' %}
+                                <option value="admin">Administrador</option>
+                            {% endif %}
+                                {% if session['usuario_tipo'] == 'dev' %}
+                                <option value="dev">Desenvolvedor</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-padrao btn-padrao-outline" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-padrao btn-padrao-primary" onclick="adicionarUsuario()">
+                    <i class="bi bi-check-circle me-1"></i>Salvar
+                </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- Modal para Editar Usuário -->
+<div class="modal fade modal-usuario" id="editarUsuarioModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    Editar Usuário
+                </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                <form id="form-editar-usuario">
+                    <input type="hidden" id="editar-id">
+                    <div class="mb-3">
+                        <label for="editar-nome" class="form-label">Nome completo</label>
+                        <input type="text" class="form-control" id="editar-nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-email" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" id="editar-email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-senha" class="form-label">Nova senha (deixe em branco para manter)</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="editar-senha">
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleSenha('editar-senha')">
+                                <i class="bi bi-eye"></i>
+                                </button>
+                        </div>
+                        </div>
+                    <div class="mb-3">
+                        <label for="editar-tipo" class="form-label">Tipo de usuário</label>
+                        <select class="form-select" id="editar-tipo" required>
+                            <option value="">Selecione...</option>
+                            <option value="cliente">Cliente</option>
+                            <option value="vendedor">Vendedor</option>
+                            {% if session['usuario_tipo'] == 'gerente' or session['usuario_tipo'] == 'admin' or session['usuario_tipo'] == 'dev' %}
+                                <option value="gerente">Gerente</option>
+                            {% endif %}
+                            {% if session['usuario_tipo'] == 'admin' or session['usuario_tipo'] == 'dev' %}
+                                <option value="admin">Administrador</option>
+                            {% endif %}
+                            {% if session['usuario_tipo'] == 'dev' %}
+                                <option value="dev">Desenvolvedor</option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editar-status" class="form-label">Status</label>
+                        <select class="form-select" id="editar-status" required>
+                            <option value="ativo">Ativo</option>
+                            <option value="inativo">Inativo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-padrao btn-padrao-outline" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-padrao btn-padrao-primary" onclick="atualizarUsuario()">
+                    <i class="bi bi-check-circle me-1"></i>Salvar Alterações
+                </button>
+            </div>
+        </div>
+                    </div>
+                </div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div class="modal fade" id="confirmacaoExclusaoModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                <p>Tem certeza que deseja excluir o usuário <strong id="nome-usuario-exclusao"></strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i>
+                    Esta ação não pode ser desfeita.
+                </p>
+                        </div>
+                        <div class="modal-footer">
+                <button type="button" class="btn btn-padrao btn-padrao-outline" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-exclusao">
+                    <i class="bi bi-trash me-1"></i>Excluir
+                </button>
+            </div>
+                        </div>
+                    </div>
+                </div>
+{% endblock %} 

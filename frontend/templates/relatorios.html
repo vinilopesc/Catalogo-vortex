@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - Catálogo Vortex{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-lg-4">
+    <div class="relatorios-hero mb-4">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-7">
+                    <h1><i class="bi bi-graph-up me-2"></i>Relatórios</h1>
+                    <p>Visualize e analise dados importantes para o seu negócio</p>
+                </div>
+                <div class="col-md-5 text-md-end">
+                    <span class="badge bg-warning text-dark py-2 px-3">
+                        <i class="bi bi-tools me-1"></i> Em Desenvolvimento
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de tipos de relatórios -->
+    <h4 class="mb-3">Categorias de Relatórios</h4>
+    <div class="relatorios-grid mb-4">
+        <div class="relatorio-card">
+            <div class="relatorio-card-header">
+                <div class="relatorio-icon vendas">
+                    <i class="bi bi-graph-up"></i>
+                </div>
+                <h3 class="relatorio-title">Vendas</h3>
+            </div>
+            <div class="relatorio-card-body">
+                <p>Análise completa de vendas, produtos mais vendidos, e tendências de consumo por período.</p>
+                <div class="relatorio-actions">
+                    <a href="#" class="btn btn-relatorio btn-relatorio-primary">Gerar Relatório</a>
+                    <button class="btn btn-relatorio btn-relatorio-outline">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="relatorio-card">
+            <div class="relatorio-card-header">
+                <div class="relatorio-icon estoque">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <h3 class="relatorio-title">Estoque</h3>
+            </div>
+            <div class="relatorio-card-body">
+                <p>Acompanhe níveis de estoque, produtos com pouca quantidade, e histórico de movimentações.</p>
+                <div class="relatorio-actions">
+                    <a href="#" class="btn btn-relatorio btn-relatorio-primary">Gerar Relatório</a>
+                    <button class="btn btn-relatorio btn-relatorio-outline">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="relatorio-card">
+            <div class="relatorio-card-header">
+                <div class="relatorio-icon financeiro">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <h3 class="relatorio-title">Financeiro</h3>
+            </div>
+            <div class="relatorio-card-body">
+                <p>Relatórios de receitas, despesas, lucros e métricas de desempenho financeiro do negócio.</p>
+                <div class="relatorio-actions">
+                    <a href="#" class="btn btn-relatorio btn-relatorio-primary">Gerar Relatório</a>
+                    <button class="btn btn-relatorio btn-relatorio-outline">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="relatorio-card">
+            <div class="relatorio-card-header">
+                <div class="relatorio-icon usuarios">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3 class="relatorio-title">Usuários</h3>
+            </div>
+            <div class="relatorio-card-body">
+                <p>Análise de atividade de usuários, desempenho de vendedores e administradores do sistema.</p>
+                <div class="relatorio-actions">
+                    <a href="#" class="btn btn-relatorio btn-relatorio-primary">Gerar Relatório</a>
+                    <button class="btn btn-relatorio btn-relatorio-outline">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de relatório -->
+    <div class="filtros-card">
+        <h5><i class="bi bi-funnel"></i> Filtros de Relatório</h5>
+        <form id="filtros-form">
+            <div class="filtros-row">
+                <div class="filtro-item">
+                    <label class="filtros-form-label">Tipo de Relatório</label>
+                    <select class="form-select">
+                        <option selected>Relatório de Vendas</option>
+                        <option>Produtos Mais Vendidos</option>
+                        <option>Vendas por Período</option>
+                        <option>Desempenho por Categoria</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label class="filtros-form-label">Período</label>
+                    <select class="form-select">
+                        <option selected>Últimos 30 dias</option>
+                        <option>Última semana</option>
+                        <option>Este mês</option>
+                        <option>Este ano</option>
+                        <option>Período personalizado</option>
+                    </select>
+                </div>
+                <div class="filtro-item">
+                    <label class="filtros-form-label">Categoria</label>
+                    <select class="form-select">
+                        <option selected>Todas as categorias</option>
+                        <option>Lanches</option>
+                        <option>Bebidas</option>
+                        <option>Sobremesas</option>
+                        <option>Pratos principais</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filtros-row">
+                <div class="filtro-item">
+                    <label class="filtros-form-label">Data Inicial</label>
+                    <input type="date" class="form-control date-picker">
+                </div>
+                <div class="filtro-item">
+                    <label class="filtros-form-label">Data Final</label>
+                    <input type="date" class="form-control date-picker">
+                </div>
+                <div class="filtro-item">
+                    <label class="filtros-form-label">Ordenar por</label>
+                    <select class="form-select">
+                        <option selected>Maior valor</option>
+                        <option>Menor valor</option>
+                        <option>Mais recente</option>
+                        <option>Mais antigo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn-gerar-relatorio">
+                    <i class="bi bi-bar-chart"></i> Gerar Relatório
+                </button>
+                <button type="button" id="reset-filtros" class="btn-reset-filtros">
+                    <i class="bi bi-arrow-counterclockwise"></i> Limpar Filtros
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Container do relatório -->
+    <div class="report-container">
+        <div class="report-header">
+            <h5 class="report-title">
+                <i class="bi bi-bar-chart-fill"></i>
+                Relatório de Vendas - Últimos 30 dias
+            </h5>
+            <div class="report-actions">
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+                <button class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Exportar
+                </button>
+            </div>
+        </div>
+        <div class="report-body p-4">
+            <!-- Cards de resumo -->
+            <div class="report-summary mb-4">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="summary-card bg-primary bg-opacity-10">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="bi bi-bag"></i> Total de Vendas
+                                </div>
+                                <div class="summary-value" data-summary="vendas">997</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="summary-card bg-success bg-opacity-10">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="bi bi-currency-dollar"></i> Receita Total
+                                </div>
+                                <div class="summary-value" data-summary="receita">R$ 14.180,00</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="summary-card bg-info bg-opacity-10">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="bi bi-basket"></i> Ticket Médio
+                                </div>
+                                <div class="summary-value">R$ 42,20</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <div class="summary-card bg-warning bg-opacity-10">
+                            <div>
+                                <div class="summary-label">
+                                    <i class="bi bi-graph-up-arrow"></i> Crescimento
+                                </div>
+                                <div class="summary-value text-success">+12%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row mb-4">
+                <div class="col-lg-8 mb-3">
+                    <div class="chart-container" data-chart-type="bar">
+                        <div class="chart-header">
+                            <h6 class="chart-title">
+                                <i class="bi bi-bar-chart"></i> Vendas por Produto (Top 5)
+                            </h6>
+                            <div class="chart-options">
+                                <button class="btn btn-sm btn-link text-muted">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body"></div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-3">
+                    <div class="chart-container" data-chart-type="pie">
+                        <div class="chart-header">
+                            <h6 class="chart-title">
+                                <i class="bi bi-pie-chart"></i> Vendas por Categoria
+                            </h6>
+                            <div class="chart-options">
+                                <button class="btn btn-sm btn-link text-muted">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-body"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de dados -->
+            <div class="report-table-container table-responsive">
+                <table class="report-table table">
+                    <thead>
+                        <tr>
+                            <th>Produto</th>
+                            <th class="text-center">Qtd. Vendida</th>
+                            <th class="text-end">Receita</th>
+                            <th class="text-end">Crescimento</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dados da tabela serão preenchidos via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

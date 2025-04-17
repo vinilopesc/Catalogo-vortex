@@ -1,0 +1,570 @@
+{% extends 'base.html' %}
+
+{% block title %}Catálogo de Produtos - Vortex{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para a página de catálogo */
+    .produto-descricao {
+        height: 48px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .btn-comprar {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .btn-comprar:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Título em uma linha separada -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="catalogo-titulo">Catálogo de Produtos</h1>
+            <p class="lead text-muted">Explore nossa seleção exclusiva de bebidas premium</p>
+        </div>
+    </div>
+    
+    <!-- Barra de busca + carrinho fixa (separada do fluxo normal) -->
+    <div class="search-cart-bar">
+        <div class="input-group">
+            <input type="text" class="form-control search-input" id="busca-produto" placeholder="Buscar produtos..." onkeyup="filtrarProdutos()">
+            <button class="btn position-relative" style="background-color: var(--primary-color); color: white;" onclick="abrirCarrinho()">
+                <i class="bi bi-cart"></i> Carrinho
+                <span class="badge bg-danger carrinho-badge" id="carrinho-contador-btn">0</span>
+            </button>
+        </div>
+    </div>
+    
+    <div id="produtos-container" class="row">
+        <!-- Produtos serão inseridos aqui via JavaScript -->
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="text-muted">Carregando produtos...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Quantidade -->
+<div class="modal fade" id="modalQuantidade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Selecionar Quantidade</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Produto</label>
+                    <p id="produto-nome" class="form-control-static"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Preço Unitário</label>
+                    <p id="produto-preco" class="form-control-static"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Estoque Disponível</label>
+                    <p id="produto-estoque" class="form-control-static"></p>
+                </div>
+                <div class="mb-3">
+                    <label for="quantidade-produto" class="form-label">Quantidade</label>
+                    <input type="number" class="form-control" id="quantidade-produto" min="1" value="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarAdicao()">Adicionar ao Carrinho</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal do Carrinho -->
+<div class="modal fade" id="carrinhoModal" tabindex="-1">
+    <div class="modal-dialog modal-pedido">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Carrinho de Compras</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="carrinho-produtos" class="mb-3">
+                    <div id="lista-produtos">
+                    </div>
+                    <div class="mt-3">
+                        <h6>Total: R$ <span id="total-carrinho">0.00</span></h6>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continuar Comprando</button>
+                <button type="button" class="btn btn-primary" onclick="abrirFinalizacao()">Finalizar Compra</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Finalização -->
+<div class="modal fade" id="finalizacaoModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Finalizar Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5 mb-4">
+                        <div class="card border-light">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Resumo do Pedido</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="resumo-pedido"></div>
+                                <div class="mt-3 pt-3 border-top">
+                                    <strong>Total: R$ <span id="total-final">0,00</span></strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-7">
+                        <form id="pedidoForm" class="needs-validation" novalidate>
+                            <div class="row mb-4">
+                                <h6 class="mb-3">Dados Pessoais</h6>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nome</label>
+                                    <input type="text" class="form-control" id="cliente_nome" placeholder="Nome completo" required>
+                                    <div class="mensagem-erro" id="erro-cliente_nome">Este campo é obrigatório</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Telefone</label>
+                                    <input type="tel" class="form-control" id="cliente_telefone" placeholder="(00) 00000-0000" required>
+                                    <div class="mensagem-erro" id="erro-cliente_telefone">Este campo é obrigatório</div>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Email (opcional)</label>
+                                    <input type="email" class="form-control" id="cliente_email" placeholder="exemplo@email.com">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <h6 class="mb-3">Endereço de Entrega</h6>
+                                <div class="col-md-8 mb-3">
+                                    <label class="form-label">Rua</label>
+                                    <input type="text" class="form-control" id="rua" placeholder="Nome da rua" required>
+                                    <div class="mensagem-erro" id="erro-rua">Este campo é obrigatório</div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Número</label>
+                                    <input type="text" class="form-control" id="numero" placeholder="Ex: 123A" required>
+                                    <div class="mensagem-erro" id="erro-numero">Este campo é obrigatório</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Bairro</label>
+                                    <input type="text" class="form-control" id="bairro" placeholder="Nome do bairro" required>
+                                    <div class="mensagem-erro" id="erro-bairro">Este campo é obrigatório</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Complemento (opcional)</label>
+                                    <input type="text" class="form-control" id="complemento" placeholder="Apto, bloco, etc.">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Cidade</label>
+                                    <input type="text" class="form-control" id="cidade" placeholder="Nome da cidade" required>
+                                    <div class="mensagem-erro" id="erro-cidade">Este campo é obrigatório</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Estado</label>
+                                    <select class="form-control form-select" id="estado" required>
+                                        <option value="">Selecione um estado</option>
+                                        <option value="AC">Acre</option>
+                                        <option value="AL">Alagoas</option>
+                                        <option value="AP">Amapá</option>
+                                        <option value="AM">Amazonas</option>
+                                        <option value="BA">Bahia</option>
+                                        <option value="CE">Ceará</option>
+                                        <option value="DF">Distrito Federal</option>
+                                        <option value="ES">Espírito Santo</option>
+                                        <option value="GO">Goiás</option>
+                                        <option value="MA">Maranhão</option>
+                                        <option value="MT">Mato Grosso</option>
+                                        <option value="MS">Mato Grosso do Sul</option>
+                                        <option value="MG">Minas Gerais</option>
+                                        <option value="PA">Pará</option>
+                                        <option value="PB">Paraíba</option>
+                                        <option value="PR">Paraná</option>
+                                        <option value="PE">Pernambuco</option>
+                                        <option value="PI">Piauí</option>
+                                        <option value="RJ">Rio de Janeiro</option>
+                                        <option value="RN">Rio Grande do Norte</option>
+                                        <option value="RS">Rio Grande do Sul</option>
+                                        <option value="RO">Rondônia</option>
+                                        <option value="RR">Roraima</option>
+                                        <option value="SC">Santa Catarina</option>
+                                        <option value="SP">São Paulo</option>
+                                        <option value="SE">Sergipe</option>
+                                        <option value="TO">Tocantins</option>
+                                    </select>
+                                    <div class="mensagem-erro" id="erro-estado">Este campo é obrigatório</div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="voltarCarrinho()">Voltar</button>
+                <button type="button" class="btn btn-primary" id="btn-finalizar" onclick="finalizarPedido()">Finalizar Pedido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização de Produto -->
+<div class="modal fade" id="modalVisualizacaoProduto" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-5 text-center mb-3">
+                        <img id="produto-detalhe-imagem" src="" alt="Imagem do produto" class="img-fluid rounded" style="max-height: 250px; object-fit: contain;">
+                    </div>
+                    <div class="col-md-7">
+                        <h4 id="produto-detalhe-nome" class="mb-3"></h4>
+                        <p id="produto-detalhe-descricao" class="text-muted mb-3"></p>
+                        <div class="d-flex justify-content-between mb-3">
+                            <h5 class="text-success fw-bold">R$ <span id="produto-detalhe-preco"></span></h5>
+                            <span class="badge bg-success" id="produto-detalhe-estoque"></span>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="row">
+                                <div class="col">
+                                    <label for="produto-detalhe-quantidade" class="form-label">Quantidade</label>
+                                    <input type="number" class="form-control" id="produto-detalhe-quantidade" min="1" value="1">
+                                </div>
+                                <div class="col-auto d-flex align-items-end">
+                                    <button class="btn btn-primary" id="btn-adicionar-carrinho">
+                                        <i class="bi bi-cart-plus"></i> Adicionar ao Carrinho
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block toasts %}
+<div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+        <i class="bi bi-check-circle-fill text-success me-2"></i>
+        <strong class="me-auto">Sucesso</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+        Pedido realizado com sucesso!
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let produtos = [];
+    let carrinho = [];
+    let produtoSelecionado = null;
+    
+    // Declarar as variáveis
+    let modalQuantidade, modalCarrinho, modalFinalizacao, modalVisualizacaoProduto;
+    let listaProdutos, resumoPedido, contadorCarrinho, totalCarrinho, totalFinal, toast;
+
+    // Função para normalizar texto (remover acentos e caracteres especiais)
+    function normalizarTexto(texto) {
+        return Vortex.normalizeText(texto);
+    }
+
+    // Carregar produtos ao iniciar a página
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM carregado, iniciando aplicação...');
+        
+        try {
+            // Limpar o carrinho para evitar itens de testes anteriores
+            localStorage.removeItem('carrinho');
+            carrinho = [];
+            console.log('Carrinho limpo no carregamento inicial da página');
+            
+            // Inicializar componentes Bootstrap
+            modalQuantidade = new bootstrap.Modal(document.getElementById('modalQuantidade'));
+            modalCarrinho = new bootstrap.Modal(document.getElementById('carrinhoModal'));
+            modalFinalizacao = new bootstrap.Modal(document.getElementById('finalizacaoModal'));
+            modalVisualizacaoProduto = new bootstrap.Modal(document.getElementById('modalVisualizacaoProduto'));
+            
+            listaProdutos = document.getElementById('lista-produtos');
+            resumoPedido = document.getElementById('resumo-pedido');
+            contadorCarrinho = document.getElementById('carrinho-contador-btn');
+            totalCarrinho = document.getElementById('total-carrinho');
+            totalFinal = document.getElementById('total-final');
+            
+            // Inicializar toast de notificações
+            const toastElement = document.getElementById('toast');
+            if (toastElement) {
+                toast = new bootstrap.Toast(toastElement);
+            }
+            
+            // Configurar evento de adicionar ao carrinho a partir do modal de detalhes
+            document.getElementById('btn-adicionar-carrinho').addEventListener('click', function() {
+                adicionarAoCarrinhoDoDetalhe();
+            });
+                        
+            console.log('Componentes Bootstrap inicializados com sucesso');
+        } catch (error) {
+            console.error('Erro ao inicializar componentes:', error);
+        }
+        
+        // Tentar carregar o carrinho salvo no localStorage
+        try {
+            const carrinhoSalvo = localStorage.getItem('carrinho');
+            if (carrinhoSalvo) {
+                carrinho = JSON.parse(carrinhoSalvo);
+                console.log(`Carrinho carregado do localStorage: ${carrinho.length} item(s)`);
+                // Verificar se o carrinho é válido
+                if (!Array.isArray(carrinho)) {
+                    console.error('Carrinho salvo inválido, resetando...');
+                    carrinho = [];
+                    localStorage.removeItem('carrinho');
+                }
+            } else {
+                carrinho = [];
+                console.log('Carrinho inicializado como array vazio (nada no localStorage)');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar carrinho do localStorage:', error);
+            carrinho = [];
+            localStorage.removeItem('carrinho');
+        }
+        
+        // Carregar produtos do servidor
+        console.log('Chamando função carregarProdutos()...');
+        setTimeout(() => {
+            carregarProdutos();
+        }, 100);
+        
+        // Inicializar carrinho
+        atualizarContadorCarrinho();
+
+        // Configurar formatação automática do telefone
+        const telefoneInput = document.getElementById('cliente_telefone');
+        if (telefoneInput) {
+            telefoneInput.addEventListener('input', function(e) {
+                // Remove tudo que não é dígito
+                let valor = this.value.replace(/\D/g, '');
+                
+                // Limita a 11 dígitos (DDD + número)
+                if (valor.length > 11) {
+                    valor = valor.substring(0, 11);
+                }
+                
+                // Formatar como (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+                if (valor.length <= 2) {
+                    // Até 2 dígitos, apenas coloca os parênteses
+                    this.value = valor.length > 0 ? `(${valor}` : valor;
+                } else if (valor.length <= 6) {
+                    // De 3 a 6 dígitos
+                    this.value = `(${valor.substring(0, 2)}) ${valor.substring(2)}`;
+                } else if (valor.length <= 10) {
+                    // Telefone fixo: (XX) XXXX-XXXX
+                    this.value = `(${valor.substring(0, 2)}) ${valor.substring(2, 6)}-${valor.substring(6)}`;
+                } else {
+                    // Celular: (XX) XXXXX-XXXX
+                    this.value = `(${valor.substring(0, 2)}) ${valor.substring(2, 7)}-${valor.substring(7)}`;
+                }
+            });
+        }
+    });
+
+    function filtrarProdutos() {
+        const termo = document.getElementById('busca-produto').value;
+        if (!termo.trim()) {
+            // Se não tiver termo de busca, mostrar todos os produtos
+            renderizarProdutos(produtos);
+            return;
+        }
+        
+        const termoNormalizado = normalizarTexto(termo);
+        
+        // Filtrar produtos que contêm o termo de busca
+        const produtosFiltrados = produtos.filter(produto => 
+            normalizarTexto(produto.nome).includes(termoNormalizado) || 
+            normalizarTexto(produto.descricao).includes(termoNormalizado)
+        );
+        
+        renderizarProdutos(produtosFiltrados);
+    }
+
+    // Função para carregar produtos da API
+    async function carregarProdutos() {
+        try {
+            console.log('Iniciando carregamento de produtos...');
+            
+            // Mostrar indicador de carregamento
+            const container = document.getElementById('produtos-container');
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="text-muted">Carregando produtos...</p>
+                </div>
+            `;
+            
+            const response = await fetch('/api/produtos');
+            console.log(`Resposta recebida: ${response.status} ${response.statusText}`);
+            
+            if (!response.ok) {
+                throw new Error(`Erro ao carregar produtos: ${response.status}`);
+            }
+            
+            const dados = await response.json();
+            console.log(`Dados recebidos:`, dados);
+            
+            if (!Array.isArray(dados)) {
+                console.error('Erro: Produtos não é um array', dados);
+                throw new Error('Resposta inválida: produtos não é um array');
+            }
+            
+            // Guardar produtos em variável global
+            produtos = dados;
+            console.log(`${produtos.length} produtos armazenados globalmente`);
+            
+            // Renderizar produtos na tela
+            renderizarProdutos(produtos);
+            
+        } catch (error) {
+            console.error('Erro ao carregar produtos:', error);
+            
+            const container = document.getElementById('produtos-container');
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-danger mb-3"></i>
+                    <h3>Erro ao carregar produtos</h3>
+                    <p class="text-muted">${error.message || 'Ocorreu um erro ao tentar carregar os produtos.'}</p>
+                    <button class="btn btn-primary mt-3" onclick="carregarProdutos()">
+                        <i class="bi bi-arrow-clockwise"></i> Tentar Novamente
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Função para renderizar produtos na interface
+    function renderizarProdutos(listaProdutos) {
+        console.log(`Renderizando ${listaProdutos ? listaProdutos.length : 0} produtos...`);
+        
+        const container = document.getElementById('produtos-container');
+        if (!container) {
+            console.error('Elemento container de produtos não encontrado');
+            return;
+        }
+        
+        // Limpar o container
+        container.innerHTML = '';
+        
+        // Verificar se há produtos para exibir
+        if (!listaProdutos || !Array.isArray(listaProdutos) || listaProdutos.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                    <h3>Nenhum produto disponível</h3>
+                    <p class="text-muted">Quando houver produtos, eles aparecerão aqui.</p>
+                </div>
+            `;
+            console.log('Nenhum produto para exibir');
+            return;
+        }
+        
+        // Renderizar cada produto
+        listaProdutos.forEach((produto, index) => {
+            try {
+                console.log(`Renderizando produto ${index+1}/${listaProdutos.length}: ${produto.id} - ${produto.nome}`);
+                
+                // Verificar se há estoque
+                const temEstoque = produto.quantidade_estoque > 0;
+                
+                // Criar coluna para o produto
+                const coluna = document.createElement('div');
+                coluna.className = 'col-md-4 col-sm-6 col-12 produto-card';
+                
+                // Formatar preço com vírgula
+                const precoFormatado = produto.preco.toFixed(2).replace('.', ',');
+                
+                // HTML interno da coluna
+                coluna.innerHTML = `
+                    <div class="card h-100" style="cursor: pointer;" onclick="visualizarProduto('${produto.id}')">
+                        <img src="${produto.imagem_url || '/static/images/produtos/no-image.png'}" class="card-img-top produto-imagem" alt="${produto.nome}">
+                        <div class="card-body">
+                            <h5 class="card-title">${produto.nome}</h5>
+                            <p class="card-text produto-descricao mb-2">${produto.descricao}</p>
+                            <p class="card-text">
+                                <span class="fw-bold text-success">R$ ${precoFormatado}</span>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-${temEstoque ? 'success' : 'danger'}">
+                                        ${temEstoque ? 'Em estoque' : 'Indisponível'}
+                                    </span>
+                                </div>
+                                <button class="btn btn-comprar btn-sm" 
+                                    onclick="abrirModalQuantidade('${produto.id}', '${produto.nome.replace(/'/g, "\'")}', ${produto.preco}, ${produto.quantidade_estoque}); event.stopPropagation();"
+                                    ${!temEstoque ? 'disabled' : ''}>
+                                    <i class="bi bi-cart-plus"></i> Adicionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(coluna);
+            } catch (error) {
+                console.error(`Erro ao renderizar produto ${index}:`, error);
+            }
+        });
+        
+        console.log('Produtos renderizados com sucesso!');
+    }
+
+    // Outras funções relacionadas ao catálogo e carrinho
+    // (Os métodos adicionarAoCarrinho, removerDoCarrinho, calcularTotal, etc. mantidos como no original)
+    
+    // Mostrar uma notificação usando a biblioteca de utilitários
+    function mostrarNotificacao(tipo, mensagem) {
+        Vortex.showToast(tipo, mensagem);
+    }
+</script>
+{% endblock %}
