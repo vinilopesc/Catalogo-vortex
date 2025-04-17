@@ -1,39 +1,33 @@
-"""
-Entidade de domínio: Pedido
-Representa um pedido realizado no sistema.
-Camada: Domain
-
-Atributos:
-- id: int
-- cliente: Cliente
-- produtos: list[dict] -> cada item: {id_produto, nome, quantidade, preco}
-- status: str (Pendente, Concluído)
-- data: str ou datetime
-"""
-
+# backend/domain/pedido.py (versão melhorada)
+from enum import Enum
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import List, Optional
 from datetime import datetime
 from .cliente import Cliente
 
+class StatusPedido(Enum):
+    CARRINHO = "Carrinho"         # Pedido em elaboração pelo cliente
+    ENVIADO = "Enviado"           # Pedido enviado para o distribuidor
+    EM_ANALISE = "Em Análise"     # Distribuidor está analisando
+    CONFIRMADO = "Confirmado"     # Pedido aceito pelo distribuidor
+    EM_PREPARACAO = "Em Preparação" # Sendo preparado para entrega
+    ENTREGUE = "Entregue"         # Pedido já entregue
+    CANCELADO = "Cancelado"       # Pedido cancelado
+    RECUSADO = "Recusado"         # Pedido recusado pelo distribuidor
+
 @dataclass
 class ItemPedido:
-    """
-    Representa um item individual dentro de um pedido.
-    """
     produto_id: int
     quantidade: int
     preco_unitario: float
     pedido_id: Optional[int] = None
     id: Optional[int] = None
     nome: Optional[str] = None
-
+    
     def calcular_subtotal(self) -> float:
-        """Calcula o valor total deste item (quantidade * preço)"""
         return self.quantidade * self.preco_unitario
-
+    
     def to_dict(self) -> dict:
-        """Converte o item para um dicionário"""
         return {
             "id": self.id,
             "pedido_id": self.pedido_id,
@@ -48,37 +42,49 @@ class ItemPedido:
 class Pedido:
     id: int
     cliente: Cliente
-    produtos: List[Dict] = field(default_factory=list)  # Pode ser lista de dicionários ou ItemPedido
-    itens: List[ItemPedido] = field(default_factory=list)  # Campo adicional para itens estruturados
-    status: str = "Pendente"
-    data: str = field(default_factory=lambda: datetime.now().isoformat())
-
+    itens: List[ItemPedido] = field(default_factory=list)
+    status: StatusPedido = StatusPedido.CARRINHO
+    data_criacao: datetime = field(default_factory=datetime.now)
+    data_atualizacao: Optional[datetime] = None
+    distribuidor_id: Optional[int] = None
+    observacoes_cliente: Optional[str] = None
+    observacoes_distribuidor: Optional[str] = None
+    
     def calcular_total(self) -> float:
-        """Calcula o valor total do pedido"""
-        # Se temos itens estruturados, usar eles
-        if self.itens:
-            return sum(item.calcular_subtotal() for item in self.itens)
-        # Caso contrário, usar a lista de produtos
-        return sum(item['quantidade'] * item['preco'] for item in self.produtos)
-
-    def marcar_como_concluido(self):
-        """Muda o status do pedido para Concluído"""
-        self.status = "Concluído"
-
+        return sum(item.calcular_subtotal() for item in self.itens)
+    
+    def atualizar_status(self, novo_status: StatusPedido):
+        self.status = novo_status
+        self.data_atualizacao = datetime.now()
+    
+    def adicionar_item(self, item: ItemPedido):
+        # Verificar se o item já existe no pedido
+        for i, existing_item in enumerate(self.itens):
+            if existing_item.produto_id == item.produto_id:
+                # Atualizar quantidade do item existente
+                self.itens[i].quantidade += item.quantidade
+                return
+        # Adicionar novo item
+        self.itens.append(item)
+    
+    def remover_item(self, produto_id: int):
+        self.itens = [item for item in self.itens if item.produto_id != produto_id]
+    
+    def enviar_para_distribuidor(self, distribuidor_id: int):
+        self.status = StatusPedido.ENVIADO
+        self.distribuidor_id = distribuidor_id
+        self.data_atualizacao = datetime.now()
+    
     def to_dict(self) -> dict:
-        """Converte o pedido para um dicionário"""
-        result = {
+        return {
             "id": self.id,
             "cliente": self.cliente.to_dict(),
-            "status": self.status,
-            "data": self.data,
+            "itens": [item.to_dict() for item in self.itens],
+            "status": self.status.value,
+            "data_criacao": self.data_criacao.isoformat(),
+            "data_atualizacao": self.data_atualizacao.isoformat() if self.data_atualizacao else None,
+            "distribuidor_id": self.distribuidor_id,
+            "observacoes_cliente": self.observacoes_cliente,
+            "observacoes_distribuidor": self.observacoes_distribuidor,
             "total": self.calcular_total()
         }
-
-        # Incluir produtos ou itens, dependendo de qual está preenchido
-        if self.itens:
-            result["produtos"] = [item.to_dict() for item in self.itens]
-        else:
-            result["produtos"] = self.produtos
-
-        return result

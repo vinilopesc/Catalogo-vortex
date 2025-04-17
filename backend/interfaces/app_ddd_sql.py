@@ -1221,5 +1221,129 @@ def exportar_estoque_excel():
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
 
+
+@app.route('/api/pedidos/<int:pedido_id>/status', methods=['PUT'])
+@requer_login
+def api_atualizar_status_pedido(pedido_id):
+    """Atualiza o status de um pedido (usado pelo distribuidor)"""
+    try:
+        data = request.json
+        novo_status = data.get('status')
+        observacoes = data.get('observacoes')
+
+        if not novo_status:
+            return jsonify({"erro": "Novo status é obrigatório"}), 400
+
+        # Apenas distribuidores podem atualizar status
+        if session.get('usuario_tipo') not in ['gerente', 'dev']:
+            return jsonify({"erro": "Apenas distribuidores podem atualizar status de pedidos"}), 403
+
+        pedido_service = PedidoService()
+        pedido = pedido_service.atualizar_status_pedido(
+            pedido_id, novo_status, observacoes
+        )
+
+        return jsonify(pedido)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 400
+
+
+@app.route('/api/pedidos/cliente', methods=['GET'])
+@requer_login
+def api_listar_pedidos_cliente():
+    """Lista todos os pedidos do cliente logado"""
+    try:
+        cliente_id = session.get('usuario_id')
+
+        pedido_service = PedidoService()
+        pedidos = pedido_service.listar_pedidos_cliente(cliente_id)
+
+        return jsonify(pedidos)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+@app.route('/api/pedidos/distribuidor', methods=['GET'])
+@requer_login
+def api_listar_pedidos_distribuidor():
+    """Lista todos os pedidos destinados ao distribuidor logado"""
+    try:
+        # Apenas distribuidores podem ver pedidos como distribuidor
+        if session.get('usuario_tipo') not in ['gerente', 'dev']:
+            return jsonify({"erro": "Acesso negado"}), 403
+
+        distribuidor_id = session.get('usuario_id')
+
+        pedido_service = PedidoService()
+        pedidos = pedido_service.listar_pedidos_distribuidor(distribuidor_id)
+
+        return jsonify(pedidos)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+@app.route('/api/pedidos/<int:pedido_id>', methods=['GET'])
+@requer_login
+def api_obter_pedido(pedido_id):
+    """Obtém os detalhes de um pedido específico"""
+    try:
+        pedido_service = PedidoService()
+        pedido = pedido_service.obter_pedido(pedido_id)
+
+        if not pedido:
+            return jsonify({"erro": "Pedido não encontrado"}), 404
+
+        # Verificar permissão
+        usuario_id = session.get('usuario_id')
+        usuario_tipo = session.get('usuario_tipo')
+
+        # Apenas o cliente dono do pedido ou o distribuidor podem ver
+        if (usuario_id != pedido['cliente']['id'] and
+                usuario_id != pedido['distribuidor_id'] and
+                usuario_tipo not in ['gerente', 'dev']):
+            return jsonify({"erro": "Acesso negado a este pedido"}), 403
+
+        return jsonify(pedido)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+
+@app.route('/api/distribuidores', methods=['GET'])
+@requer_login
+def api_listar_distribuidores():
+    """Lista todos os distribuidores disponíveis"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Buscar usuários que são distribuidores (gerentes)
+        cursor.execute("""
+            SELECT id, nome, email, telefone 
+            FROM usuarios 
+            WHERE tipo IN ('gerente', 'dev') AND deletado = 0
+        """)
+
+        distribuidores = cursor.fetchall()
+        conn.close()
+
+        return jsonify(distribuidores)
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
+# backend/interfaces/app_ddd_sql.py (adicionar as rotas)
+
+@app.route('/meus_pedidos')
+@requer_login
+def meus_pedidos():
+    """Página de visualização de pedidos do cliente"""
+    return render_template("meus_pedidos.html")
+
+@app.route('/gerenciar_pedidos')
+@requer_gerente
+def gerenciar_pedidos():
+    """Página de gerenciamento de pedidos do distribuidor"""
+    return render_template("distribuidor_pedidos.html")
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

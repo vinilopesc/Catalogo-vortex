@@ -1,0 +1,825 @@
+<!-- frontend/templates/distribuidor_pedidos.html -->
+{% extends 'base.html' %}
+
+{% block title %}Gerenciar Pedidos - Catálogo Vortex{% endblock %}
+
+{% block styles %}
+<style>
+    .dashboard-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-stats {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        flex: 1;
+        min-width: 200px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card p {
+        margin: 0;
+        color: var(--gray);
+    }
+
+    .pedidos-container {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+    }
+
+    .pedidos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .filtros {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .tab-nav {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .tab-button {
+        padding: 0.75rem 1rem;
+        border: none;
+        background: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .tab-button.active {
+        border-bottom-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    .pedido-row {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s;
+    }
+
+    .pedido-row:hover {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-color: rgba(0,0,0,0.2);
+    }
+
+    .pedido-info {
+        flex: 1;
+    }
+
+    .pedido-id {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .pedido-cliente {
+        margin-bottom: 0.25rem;
+    }
+
+    .pedido-data {
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+
+    .pedido-status {
+        padding: 0.35em 0.65em;
+        font-size: 0.85em;
+        font-weight: 500;
+        border-radius: 50rem;
+        margin-right: 1rem;
+    }
+
+    .status-Carrinho { background-color: var(--bs-secondary); color: white; }
+    .status-Enviado { background-color: var(--bs-info); color: white; }
+    .status-Em-Analise { background-color: var(--bs-warning); color: white; }
+    .status-Confirmado { background-color: var(--bs-primary); color: white; }
+    .status-Em-Preparacao { background-color: var(--bs-primary); color: white; }
+    .status-Entregue { background-color: var(--bs-success); color: white; }
+    .status-Cancelado { background-color: var(--bs-danger); color: white; }
+    .status-Recusado { background-color: var(--bs-danger); color: white; }
+
+    .pedido-acoes {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--bs-gray-400);
+        margin-bottom: 1rem;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1>Gerenciamento de Pedidos</h1>
+        <p class="lead">Visualize e gerencie todos os pedidos recebidos.</p>
+
+        <div class="dashboard-stats mt-4">
+            <div class="stat-card">
+                <h3 id="total-pedidos">0</h3>
+                <p>Total de Pedidos</p>
+            </div>
+
+            <div class="stat-card">
+                <h3 id="pedidos-pendentes">0</h3>
+                <p>Pedidos Pendentes</p>
+            </div>
+
+            <div class="stat-card">
+                <h3 id="pedidos-hoje">0</h3>
+                <p>Pedidos de Hoje</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="pedidos-container">
+        <div class="pedidos-header">
+            <h2>Lista de Pedidos</h2>
+
+            <div class="filtros">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="busca-pedido" placeholder="Buscar pedido...">
+                    <button class="btn btn-primary" type="button" onclick="filtrarPedidos()">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+
+                <select class="form-select" id="filtro-status" onchange="filtrarPedidos()">
+                    <option value="">Todos os Status</option>
+                    <option value="Enviado">Enviados</option>
+                    <option value="Em Análise">Em Análise</option>
+                    <option value="Confirmado">Confirmados</option>
+                    <option value="Em Preparação">Em Preparação</option>
+                    <option value="Entregue">Entregues</option>
+                    <option value="Cancelado">Cancelados</option>
+                    <option value="Recusado">Recusados</option>
+                </select>
+
+                <select class="form-select" id="ordenacao" onchange="filtrarPedidos()">
+                    <option value="recentes">Mais Recentes</option>
+                    <option value="antigos">Mais Antigos</option>
+                    <option value="maior-valor">Maior Valor</option>
+                    <option value="menor-valor">Menor Valor</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-button active" id="tab-todos" onclick="mudarTab('todos')">Todos</button>
+            <button class="tab-button" id="tab-novos" onclick="mudarTab('novos')">Novos</button>
+            <button class="tab-button" id="tab-em-processamento" onclick="mudarTab('em-processamento')">Em Processamento</button>
+            <button class="tab-button" id="tab-concluidos" onclick="mudarTab('concluidos')">Concluídos</button>
+        </div>
+
+        <div id="tab-content-todos" class="tab-content">
+            <div id="lista-pedidos">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-2">Carregando pedidos...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-novos" class="tab-content" style="display:none">
+            <div id="lista-pedidos-novos"></div>
+        </div>
+
+        <div id="tab-content-em-processamento" class="tab-content" style="display:none">
+            <div id="lista-pedidos-processamento"></div>
+        </div>
+
+        <div id="tab-content-concluidos" class="tab-content" style="display:none">
+            <div id="lista-pedidos-concluidos"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Pedido -->
+<div class="modal fade" id="detalhesPedidoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" id="detalhe-modal-header">
+                <h5 class="modal-title">Detalhes do Pedido #<span id="detalhe-pedido-id"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="detalhe-pedido-content">
+                <!-- Será preenchido via JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+
+                <div class="dropdown" id="acoes-pedido-dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Atualizar Status
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" onclick="atualizarStatusPedido('Em Análise')">Em Análise</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="atualizarStatusPedido('Confirmado')">Confirmar Pedido</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="atualizarStatusPedido('Em Preparação')">Em Preparação</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="atualizarStatusPedido('Entregue')">Marcar como Entregue</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="atualizarStatusPedido('Cancelado')">Cancelar Pedido</a></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="atualizarStatusPedido('Recusado')">Recusar Pedido</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Atualização de Status -->
+<div class="modal fade" id="atualizarStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="atualizar-status-titulo">Atualizar Status do Pedido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="atualizar-status-mensagem">Você está prestes a atualizar o status deste pedido.</p>
+
+                <div class="mb-3">
+                    <label for="observacoes-distribuidor" class="form-label">Observações (opcional)</label>
+                    <textarea class="form-control" id="observacoes-distribuidor" rows="3" placeholder="Adicione observações que serão visíveis para o cliente"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-atualizacao">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let pedidos = [];
+    let pedidoAtual = null;
+    let novoStatusSelecionado = null;
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+        carregarPedidos();
+    });
+
+    // Carregar pedidos do distribuidor
+    async function carregarPedidos() {
+        try {
+            const response = await fetch('/api/pedidos/distribuidor');
+
+            if (!response.ok) {
+                throw new Error('Erro ao carregar pedidos');
+            }
+
+            pedidos = await response.json();
+
+            atualizarEstatisticas();
+            renderizarTodasAbas();
+        } catch (error) {
+            console.error('Erro:', error);
+
+            document.getElementById('lista-pedidos').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Erro ao carregar pedidos: ${error.message}
+                    <button class="btn btn-sm btn-outline-danger ms-3" onclick="carregarPedidos()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Tentar novamente
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Atualizar estatísticas
+    function atualizarEstatisticas() {
+        // Total de pedidos
+        document.getElementById('total-pedidos').textContent = pedidos.length;
+
+        // Pedidos pendentes (não concluídos)
+        const pendentes = pedidos.filter(p =>
+            ['Enviado', 'Em Análise', 'Confirmado', 'Em Preparação'].includes(p.status)
+        ).length;
+        document.getElementById('pedidos-pendentes').textContent = pendentes;
+
+        // Pedidos de hoje
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        const pedidosHoje = pedidos.filter(p => {
+            const dataPedido = new Date(p.data_criacao);
+            return dataPedido >= hoje;
+        }).length;
+        document.getElementById('pedidos-hoje').textContent = pedidosHoje;
+    }
+
+    // Renderizar todas as abas
+    function renderizarTodasAbas() {
+        // Filtrar pedidos por status para cada aba
+        const pedidosFiltrados = filtrarPedidosPorFiltros(); // Aplica filtros da UI
+
+        // Aba Todos
+        renderizarListaPedidos('lista-pedidos', pedidosFiltrados);
+
+        // Aba Novos (Enviados)
+        const novos = pedidosFiltrados.filter(p => p.status === 'Enviado');
+        renderizarListaPedidos('lista-pedidos-novos', novos);
+
+        // Aba Em Processamento
+        const processamento = pedidosFiltrados.filter(p =>
+            ['Em Análise', 'Confirmado', 'Em Preparação'].includes(p.status)
+        );
+        renderizarListaPedidos('lista-pedidos-processamento', processamento);
+
+        // Aba Concluídos
+        const concluidos = pedidosFiltrados.filter(p =>
+            ['Entregue', 'Cancelado', 'Recusado'].includes(p.status)
+        );
+        renderizarListaPedidos('lista-pedidos-concluidos', concluidos);
+    }
+
+    // Filtrar pedidos conforme critérios da UI
+    function filtrarPedidosPorFiltros() {
+        // Obter valores dos filtros
+        const termoBusca = document.getElementById('busca-pedido').value.toLowerCase();
+        const statusFiltro = document.getElementById('filtro-status').value;
+        const ordenacao = document.getElementById('ordenacao').value;
+
+        // Aplicar filtros
+        let resultado = [...pedidos];
+
+        // Filtrar por termo de busca
+        if (termoBusca) {
+            resultado = resultado.filter(p =>
+                p.id.toString().includes(termoBusca) ||
+                p.cliente.nome.toLowerCase().includes(termoBusca) ||
+                p.cliente.telefone.includes(termoBusca)
+            );
+        }
+
+        // Filtrar por status
+        if (statusFiltro) {
+            resultado = resultado.filter(p => p.status === statusFiltro);
+        }
+
+        // Aplicar ordenação
+        switch (ordenacao) {
+            case 'recentes':
+                resultado.sort((a, b) => new Date(b.data_criacao) - new Date(a.data_criacao));
+                break;
+            case 'antigos':
+                resultado.sort((a, b) => new Date(a.data_criacao) - new Date(b.data_criacao));
+                break;
+            case 'maior-valor':
+                resultado.sort((a, b) => b.total - a.total);
+                break;
+            case 'menor-valor':
+                resultado.sort((a, b) => a.total - b.total);
+                break;
+            default:
+                resultado.sort((a, b) => new Date(b.data_criacao) - new Date(a.data_criacao));
+        }
+
+        return resultado;
+    }
+
+    // Atualizar filtros
+    function filtrarPedidos() {
+        renderizarTodasAbas();
+    }
+
+    // Mudar a aba ativa
+    function mudarTab(tab) {
+        // Atualizar botões
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(`tab-${tab}`).classList.add('active');
+
+        // Atualizar conteúdo visível
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        document.getElementById(`tab-content-${tab}`).style.display = 'block';
+    }
+
+    // Renderizar lista de pedidos
+    function renderizarListaPedidos(containerId, listaPedidos) {
+        const container = document.getElementById(containerId);
+
+        if (!container) return;
+
+        if (!listaPedidos || listaPedidos.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h3>Nenhum pedido encontrado</h3>
+                    <p class="text-muted">Não há pedidos correspondentes aos filtros selecionados.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        listaPedidos.forEach(pedido => {
+            // Formatar data
+            const dataPedido = new Date(pedido.data_criacao);
+            const dataFormatada = dataPedido.toLocaleDateString('pt-BR') + ' ' +
+                                 dataPedido.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+            // Status CSS class
+            const statusClass = `status-${pedido.status.replace(' ', '-')}`;
+
+            html += `
+                <div class="pedido-row">
+                    <div class="pedido-info">
+                        <div class="pedido-id">Pedido #${pedido.id}</div>
+                        <div class="pedido-cliente">${pedido.cliente.nome} - ${pedido.cliente.telefone}</div>
+                        <div class="pedido-data">${dataFormatada}</div>
+                    </div>
+
+                    <div>
+                        <span class="pedido-status ${statusClass}">${pedido.status}</span>
+                        <span class="fw-bold">R$ ${pedido.total.toFixed(2)}</span>
+                    </div>
+
+                    <div class="pedido-acoes">
+                        <button class="btn btn-sm btn-primary" onclick="abrirDetalhesPedido(${pedido.id})">
+                            <i class="bi bi-eye"></i> Detalhes
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    // Abrir modal com detalhes do pedido
+    async function abrirDetalhesPedido(pedidoId) {
+        try {
+            // Resetar pedido atual
+            pedidoAtual = null;
+
+            // Exibir loading no modal
+            document.getElementById('detalhe-pedido-id').textContent = pedidoId;
+            document.getElementById('detalhe-pedido-content').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-2">Carregando detalhes do pedido...</p>
+                </div>
+            `;
+
+            // Mostrar dropdown de ações
+            document.getElementById('acoes-pedido-dropdown').style.display = 'block';
+
+            // Abrir o modal
+            const modal = new bootstrap.Modal(document.getElementById('detalhesPedidoModal'));
+            modal.show();
+
+            // Carregar detalhes do pedido
+            const response = await fetch(`/api/pedidos/${pedidoId}`);
+
+            if (!response.ok) {
+                throw new Error('Erro ao carregar detalhes do pedido');
+            }
+
+            const pedido = await response.json();
+            pedidoAtual = pedido;
+
+            // Atualizar header conforme status
+            const headerEl = document.getElementById('detalhe-modal-header');
+            headerEl.className = 'modal-header';
+            headerEl.classList.add(`status-${pedido.status.replace(' ', '-')}`);
+
+            // Ocultar opções de status não pertinentes
+            if (['Entregue', 'Cancelado', 'Recusado'].includes(pedido.status)) {
+                // Pedido já finalizado, ocultar dropdown de ações
+                document.getElementById('acoes-pedido-dropdown').style.display = 'none';
+            }
+
+            // Formatar datas
+            const dataCriacao = new Date(pedido.data_criacao);
+            const dataCriacaoFormatada = dataCriacao.toLocaleDateString('pt-BR') + ' ' +
+                                        dataCriacao.toLocaleTimeString('pt-BR');
+
+            let dataAtualizacao = '';
+            if (pedido.data_atualizacao) {
+                const dataAtual = new Date(pedido.data_atualizacao);
+                dataAtualizacao = dataAtual.toLocaleDateString('pt-BR') + ' ' +
+                                 dataAtual.toLocaleTimeString('pt-BR');
+            }
+
+            // Construir HTML com detalhes
+            let html = `
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Informações do Pedido</h6>
+                        <p><strong>Status:</strong> <span class="badge status-${pedido.status.replace(' ', '-')}">${pedido.status}</span></p>
+                        <p><strong>Data do Pedido:</strong> ${dataCriacaoFormatada}</p>
+                        ${dataAtualizacao ? `<p><strong>Última Atualização:</strong> ${dataAtualizacao}</p>` : ''}
+                        <p><strong>Total:</strong> R$ ${pedido.total.toFixed(2)}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Informações do Cliente</h6>
+                        <p><strong>Nome:</strong> ${pedido.cliente.nome}</p>
+                        <p><strong>Telefone:</strong> ${pedido.cliente.telefone}</p>
+                        <p><strong>Email:</strong> ${pedido.cliente.email || 'Não informado'}</p>
+                        <p><strong>Endereço:</strong> ${formatarEndereco(pedido.cliente.endereco)}</p>
+                    </div>
+                </div>
+
+                <h6>Itens do Pedido</h6>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th class="text-center">Qtd</th>
+                                <th class="text-end">Valor Unit.</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            // Listar todos os itens
+            pedido.itens.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.nome}</td>
+                        <td class="text-center">${item.quantidade}</td>
+                        <td class="text-end">R$ ${item.preco_unitario.toFixed(2)}</td>
+                        <td class="text-end">R$ ${(item.quantidade * item.preco_unitario).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                <td class="text-end"><strong>R$ ${pedido.total.toFixed(2)}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+
+            // Adicionar observações se houver
+            if (pedido.observacoes_cliente) {
+                html += `
+                    <div class="mt-3">
+                        <h6>Observações do Cliente</h6>
+                        <div class="p-3 bg-light rounded">${pedido.observacoes_cliente}</div>
+                    </div>
+                `;
+            }
+
+            if (pedido.observacoes_distribuidor) {
+                html += `
+                    <div class="mt-3">
+                        <h6>Observações do Distribuidor</h6>
+                        <div class="p-3 bg-light rounded">${pedido.observacoes_distribuidor}</div>
+                    </div>
+                `;
+            }
+
+            // Atualizar conteúdo do modal
+            document.getElementById('detalhe-pedido-content').innerHTML = html;
+
+        } catch (error) {
+            console.error('Erro:', error);
+
+            document.getElementById('detalhe-pedido-content').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Erro ao carregar detalhes do pedido: ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    // Iniciar processo de atualização de status
+    function atualizarStatusPedido(novoStatus) {
+        // Guardar o novo status
+        novoStatusSelecionado = novoStatus;
+
+        // Atualizar textos no modal
+        document.getElementById('atualizar-status-titulo').textContent = `Atualizar Status para "${novoStatus}"`;
+
+        // Mensagem específica conforme o status
+        let mensagem = `Você está prestes a alterar o status do pedido #${pedidoAtual.id} para "${novoStatus}".`;
+
+        if (novoStatus === 'Confirmado') {
+            mensagem += ' Isso irá reservar os produtos do estoque.';
+        } else if (novoStatus === 'Entregue') {
+            mensagem += ' Isso marcará o pedido como finalizado.';
+        } else if (['Cancelado', 'Recusado'].includes(novoStatus)) {
+            mensagem += ' Isso encerrará o processamento do pedido.';
+        }
+
+        document.getElementById('atualizar-status-mensagem').textContent = mensagem;
+
+        // Limpar observações
+        document.getElementById('observacoes-distribuidor').value = '';
+
+        // Configurar botão de confirmação
+        const btnConfirmar = document.getElementById('btn-confirmar-atualizacao');
+        btnConfirmar.onclick = confirmarAtualizacaoStatus;
+
+        if (['Cancelado', 'Recusado'].includes(novoStatus)) {
+            btnConfirmar.className = 'btn btn-danger';
+        } else {
+            btnConfirmar.className = 'btn btn-primary';
+        }
+
+        // Abrir modal
+        const modal = new bootstrap.Modal(document.getElementById('atualizarStatusModal'));
+        modal.show();
+    }
+
+    // Confirmar atualização de status
+    async function confirmarAtualizacaoStatus() {
+        try {
+            // Verificar se há pedido atual
+            if (!pedidoAtual) {
+                throw new Error('Pedido não encontrado');
+            }
+
+            // Obter observações
+            const observacoes = document.getElementById('observacoes-distribuidor').value;
+
+            // Desabilitar botão
+            const btnConfirmar = document.getElementById('btn-confirmar-atualizacao');
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+
+            // Fazer requisição para atualizar status
+            const response = await fetch(`/api/pedidos/${pedidoAtual.id}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: novoStatusSelecionado,
+                    observacoes: observacoes
+                })
+            });
+
+            if (!response.ok) {
+                const erro = await response.json();
+                throw new Error(erro.erro || 'Erro ao atualizar status');
+            }
+
+            // Fechar modais
+            bootstrap.Modal.getInstance(document.getElementById('atualizarStatusModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('detalhesPedidoModal')).hide();
+
+            // Mostrar toast de sucesso
+            mostrarNotificacao('success', `Status do pedido atualizado para "${novoStatusSelecionado}"`);
+
+            // Recarregar pedidos
+            await carregarPedidos();
+
+        } catch (error) {
+            console.error('Erro:', error);
+
+            // Mostrar mensagem de erro
+            mostrarNotificacao('error', `Erro ao atualizar status: ${error.message}`);
+
+            // Reativar botão
+            const btnConfirmar = document.getElementById('btn-confirmar-atualizacao');
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = 'Confirmar';
+        }
+    }
+
+    // Função auxiliar para formatar endereço
+    function formatarEndereco(endereco) {
+        if (!endereco) return 'Não informado';
+
+        if (typeof endereco === 'string') {
+            return endereco;
+        }
+
+        if (endereco.endereco_completo) {
+            return endereco.endereco_completo;
+        }
+
+        let enderecoFormatado = '';
+
+        if (endereco.rua) {
+            enderecoFormatado += endereco.rua;
+
+            if (endereco.numero) {
+                enderecoFormatado += `, ${endereco.numero}`;
+            }
+
+            if (endereco.complemento) {
+                enderecoFormatado += ` - ${endereco.complemento}`;
+            }
+
+            enderecoFormatado += '<br>';
+        }
+
+        if (endereco.bairro) {
+            enderecoFormatado += `${endereco.bairro}, `;
+        }
+
+        if (endereco.cidade) {
+            enderecoFormatado += endereco.cidade;
+
+            if (endereco.estado) {
+                enderecoFormatado += ` - ${endereco.estado}`;
+            }
+        }
+
+        return enderecoFormatado || 'Não informado';
+    }
+
+    // Função para mostrar notificações
+    function mostrarNotificacao(tipo, mensagem) {
+        // Criar elemento de toast
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${tipo === 'success' ? 'success' : tipo === 'error' ? 'danger' : 'primary'} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${mensagem}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
+            </div>
+        `;
+
+        // Adicionar à página
+        const toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.appendChild(toast);
+        document.body.appendChild(toastContainer);
+
+        // Inicializar e mostrar
+        const toastInstance = new bootstrap.Toast(toast, {
+            delay: 5000
+        });
+        toastInstance.show();
+
+        // Remover após fechar
+        toast.addEventListener('hidden.bs.toast', function() {
+            document.body.removeChild(toastContainer);
+        });
+    }
+</script>
+{% endblock %}
