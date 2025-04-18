@@ -602,35 +602,6 @@ def api_criar_pedido():
             pass
         return jsonify({"erro": str(e)}), 500
 
-@app.route('/api/pedidos/<int:pedido_id>/status', methods=['PUT'])
-@requer_login
-def api_atualizar_status_pedido(pedido_id):
-    """API para atualizar o status de um pedido"""
-    try:
-        data = request.json
-
-        if 'status' not in data:
-            return jsonify({"erro": "Status não informado"}), 400
-
-        status = data['status']
-        if status not in ['Pendente', 'Concluído']:
-            return jsonify({"erro": "Status inválido"}), 400
-
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            UPDATE pedidos SET status = %s
-            WHERE id = %s
-        """, (status, pedido_id))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({"mensagem": "Status do pedido atualizado com sucesso"})
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 500
-
 @app.route('/api/pedidos/<int:pedido_id>', methods=['DELETE'])
 @requer_login
 def api_excluir_pedido(pedido_id):
@@ -1225,28 +1196,67 @@ def exportar_estoque_excel():
 @app.route('/api/pedidos/<int:pedido_id>/status', methods=['PUT'])
 @requer_login
 def api_atualizar_status_pedido(pedido_id):
-    """Atualiza o status de um pedido (usado pelo distribuidor)"""
+    """API para atualizar o status de um pedido"""
     try:
-        data = request.json
-        novo_status = data.get('status')
-        observacoes = data.get('observacoes')
+        # Verificar dados da requisição
+        dados = request.json
+        if not dados:
+            return jsonify({"erro": "Dados não fornecidos"}), 400
 
+        novo_status = dados.get('status')
         if not novo_status:
-            return jsonify({"erro": "Novo status é obrigatório"}), 400
+            return jsonify({"erro": "Novo status não informado"}), 400
 
-        # Apenas distribuidores podem atualizar status
-        if session.get('usuario_tipo') not in ['gerente', 'dev']:
-            return jsonify({"erro": "Apenas distribuidores podem atualizar status de pedidos"}), 403
+        observacoes = dados.get('observacoes')
 
+        # Verificar permissões
+        usuario_id = session.get('usuario_id')
+        usuario_tipo = session.get('usuario_tipo')
+
+        # Obter o pedido atual para verificar permissões
         pedido_service = PedidoService()
-        pedido = pedido_service.atualizar_status_pedido(
+        pedido_atual = pedido_service.obter_pedido(pedido_id)
+
+        if not pedido_atual:
+            return jsonify({"erro": "Pedido não encontrado"}), 404
+
+        # Verificar permissões específicas por tipo de status
+        if novo_status in ['Confirmado', 'Em Preparação', 'Entregue', 'Recusado']:
+            # Apenas distribuidores e gerentes podem confirmar, preparar, entregar ou recusar
+            if usuario_tipo not in ['gerente', 'dev']:
+                return jsonify({"erro": "Você não tem permissão para realizar esta operação"}), 403
+
+            # Se o pedido tem distribuidor associado, apenas ele pode atualizar
+            if pedido_atual.get('distribuidor_id') and pedido_atual.get('distribuidor_id') != usuario_id:
+                return jsonify({"erro": "Apenas o distribuidor associado pode atualizar este pedido"}), 403
+
+        if novo_status == 'Cancelado':
+            # Cliente pode cancelar seu próprio pedido
+            cliente_id = session.get('usuario_id')
+            pedido_cliente_id = pedido_atual.get('cliente', {}).get('id')
+
+            # Verificar se é o cliente dono do pedido ou um distribuidor/gerente
+            if cliente_id != pedido_cliente_id and usuario_tipo not in ['gerente', 'dev']:
+                return jsonify({"erro": "Você não tem permissão para cancelar este pedido"}), 403
+
+        # Atualizar status do pedido
+        pedido_atualizado = pedido_service.atualizar_status_pedido(
             pedido_id, novo_status, observacoes
         )
 
-        return jsonify(pedido)
-    except Exception as e:
-        return jsonify({"erro": str(e)}), 400
+        # Formatar resposta
+        resposta = {
+            "mensagem": f"Status do pedido atualizado para '{novo_status}'",
+            "pedido": pedido_atualizado
+        }
 
+        return jsonify(resposta)
+
+    except ValueError as e:
+        return jsonify({"erro": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Erro ao atualizar status do pedido {pedido_id}: {str(e)}")
+        return jsonify({"erro": f"Erro ao atualizar status: {str(e)}"}), 500
 
 @app.route('/api/pedidos/cliente', methods=['GET'])
 @requer_login
@@ -1329,8 +1339,6 @@ def api_listar_distribuidores():
         return jsonify(distribuidores)
     except Exception as e:
         return jsonify({"erro": str(e)}), 500
-
-# backend/interfaces/app_ddd_sql.py (adicionar as rotas)
 
 @app.route('/meus_pedidos')
 @requer_login

@@ -1,19 +1,21 @@
-# backend/domain/pedido.py (versão melhorada)
+# backend/domain/pedido.py
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Optional
 from datetime import datetime
 from .cliente import Cliente
 
+
 class StatusPedido(Enum):
-    CARRINHO = "Carrinho"         # Pedido em elaboração pelo cliente
-    ENVIADO = "Enviado"           # Pedido enviado para o distribuidor
-    EM_ANALISE = "Em Análise"     # Distribuidor está analisando
-    CONFIRMADO = "Confirmado"     # Pedido aceito pelo distribuidor
-    EM_PREPARACAO = "Em Preparação" # Sendo preparado para entrega
-    ENTREGUE = "Entregue"         # Pedido já entregue
-    CANCELADO = "Cancelado"       # Pedido cancelado
-    RECUSADO = "Recusado"         # Pedido recusado pelo distribuidor
+    CARRINHO = "Carrinho"
+    ENVIADO = "Enviado"
+    EM_ANALISE = "Em Análise"
+    CONFIRMADO = "Confirmado"
+    EM_PREPARACAO = "Em Preparação"
+    ENTREGUE = "Entregue"
+    CANCELADO = "Cancelado"
+    RECUSADO = "Recusado"
+
 
 @dataclass
 class ItemPedido:
@@ -23,10 +25,10 @@ class ItemPedido:
     pedido_id: Optional[int] = None
     id: Optional[int] = None
     nome: Optional[str] = None
-    
+
     def calcular_subtotal(self) -> float:
         return self.quantidade * self.preco_unitario
-    
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -37,6 +39,7 @@ class ItemPedido:
             "nome": self.nome,
             "subtotal": self.calcular_subtotal()
         }
+
 
 @dataclass
 class Pedido:
@@ -49,14 +52,14 @@ class Pedido:
     distribuidor_id: Optional[int] = None
     observacoes_cliente: Optional[str] = None
     observacoes_distribuidor: Optional[str] = None
-    
+
     def calcular_total(self) -> float:
         return sum(item.calcular_subtotal() for item in self.itens)
-    
+
     def atualizar_status(self, novo_status: StatusPedido):
         self.status = novo_status
         self.data_atualizacao = datetime.now()
-    
+
     def adicionar_item(self, item: ItemPedido):
         # Verificar se o item já existe no pedido
         for i, existing_item in enumerate(self.itens):
@@ -66,15 +69,15 @@ class Pedido:
                 return
         # Adicionar novo item
         self.itens.append(item)
-    
+
     def remover_item(self, produto_id: int):
         self.itens = [item for item in self.itens if item.produto_id != produto_id]
-    
+
     def enviar_para_distribuidor(self, distribuidor_id: int):
         self.status = StatusPedido.ENVIADO
         self.distribuidor_id = distribuidor_id
         self.data_atualizacao = datetime.now()
-    
+
     def to_dict(self) -> dict:
         return {
             "id": self.id,

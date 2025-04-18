@@ -1,17 +1,19 @@
 # backend/infrastructure/repositories/pedido_repository.py
-
-from typing import List, Optional
-import sqlite3
+from typing import List, Optional, Dict, Any
+import logging
 from datetime import datetime
 
 from backend.domain.pedido import Pedido, ItemPedido, StatusPedido
 from backend.domain.cliente import Cliente
-from backend.infrastructure.db_manager import get_db_connection
+from backend.infrastructure.config_db import get_db_connection
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 
 class PedidoRepository:
     """
-    Repositório para operações relacionadas a pedidos.
+    Repositório para operações com pedidos no banco de dados.
     """
 
     def criar(self, pedido: Pedido) -> Pedido:
@@ -22,53 +24,63 @@ class PedidoRepository:
         cursor = conn.cursor()
 
         try:
+            # Iniciar transação
+            conn.begin()
+
             # Inserir pedido
-            cursor.execute('''
+            endereco_str = str(pedido.cliente.endereco) if isinstance(pedido.cliente.endereco,
+                                                                      dict) else pedido.cliente.endereco
+
+            cursor.execute("""
                 INSERT INTO pedidos (
                     cliente_nome, cliente_telefone, cliente_email, cliente_endereco, 
-                    status, data_pedido, distribuidor_id, data_atualizacao,
-                    observacoes_cliente, observacoes_distribuidor
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
+                    status, data_pedido, data_criacao
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
                 pedido.cliente.nome,
                 pedido.cliente.telefone,
                 pedido.cliente.email,
-                str(pedido.cliente.endereco),
+                endereco_str,
                 pedido.status.value,
-                pedido.data_criacao.isoformat(),
-                pedido.distribuidor_id,
-                pedido.data_atualizacao.isoformat() if pedido.data_atualizacao else None,
-                pedido.observacoes_cliente,
-                pedido.observacoes_distribuidor
+                pedido.data_criacao.strftime('%d/%m/%Y %H:%M:%S'),
+                pedido.data_criacao
             ))
 
+            # Obter ID do pedido inserido
             pedido_id = cursor.lastrowid
             pedido.id = pedido_id
 
-            # Inserir itens do pedido se houver
+            # Inserir itens do pedido
             for item in pedido.itens:
-                cursor.execute('''
+                cursor.execute("""
                     INSERT INTO itens_pedido (
                         pedido_id, produto_id, quantidade, preco_unitario
-                    ) VALUES (?, ?, ?, ?)
-                ''', (
+                    ) VALUES (%s, %s, %s, %s)
+                """, (
                     pedido_id,
                     item.produto_id,
                     item.quantidade,
                     item.preco_unitario
                 ))
 
-                item.pedido_id = pedido_id
+                # Atribuir ID do item
                 item.id = cursor.lastrowid
+                item.pedido_id = pedido_id
 
+            # Commit da transação
             conn.commit()
+            logger.info(f"Pedido {pedido_id} criado com sucesso")
+
             return pedido
 
         except Exception as e:
+            # Rollback em caso de erro
             conn.rollback()
-            raise Exception(f"Erro ao criar pedido: {str(e)}")
+            logger.error(f"Erro ao criar pedido: {str(e)}")
+            raise
 
         finally:
+            cursor.close()
             conn.close()
 
     def atualizar(self, pedido: Pedido) -> Pedido:
@@ -79,276 +91,258 @@ class PedidoRepository:
         cursor = conn.cursor()
 
         try:
+            # Iniciar transação
+            conn.begin()
+
             # Atualizar pedido
-            cursor.execute('''
+            endereco_str = str(pedido.cliente.endereco) if isinstance(pedido.cliente.endereco,
+                                                                      dict) else pedido.cliente.endereco
+
+            cursor.execute("""
                 UPDATE pedidos SET
-                    cliente_nome = ?,
-                    cliente_telefone = ?,
-                    cliente_email = ?,
-                    cliente_endereco = ?,
-                    status = ?,
-                    distribuidor_id = ?,
-                    data_atualizacao = ?,
-                    observacoes_cliente = ?,
-                    observacoes_distribuidor = ?
-                WHERE id = ?
-            ''', (
+                    cliente_nome = %s,
+                    cliente_telefone = %s,
+                    cliente_email = %s,
+                    cliente_endereco = %s,
+                    status = %s
+                WHERE id = %s
+            """, (
                 pedido.cliente.nome,
                 pedido.cliente.telefone,
                 pedido.cliente.email,
-                str(pedido.cliente.endereco),
+                endereco_str,
                 pedido.status.value,
-                pedido.distribuidor_id,
-                pedido.data_atualizacao.isoformat() if pedido.data_atualizacao else None,
-                pedido.observacoes_cliente,
-                pedido.observacoes_distribuidor,
                 pedido.id
             ))
 
-            # Remover itens antigos
-            cursor.execute('DELETE FROM itens_pedido WHERE pedido_id = ?', (pedido.id,))
+            # Verificar se o pedido existe
+            if cursor.rowcount == 0:
+                conn.rollback()
+                raise ValueError(f"Pedido com ID {pedido.id} não encontrado")
+
+            # Atualizar itens - remover itens atuais
+            cursor.execute("DELETE FROM itens_pedido WHERE pedido_id = %s", (pedido.id,))
 
             # Inserir itens atualizados
             for item in pedido.itens:
-                cursor.execute('''
+                cursor.execute("""
                     INSERT INTO itens_pedido (
                         pedido_id, produto_id, quantidade, preco_unitario
-                    ) VALUES (?, ?, ?, ?)
-                ''', (
+                    ) VALUES (%s, %s, %s, %s)
+                """, (
                     pedido.id,
                     item.produto_id,
                     item.quantidade,
                     item.preco_unitario
                 ))
 
-                item.pedido_id = pedido.id
+                # Atualizar ID do item
                 item.id = cursor.lastrowid
 
+            # Commit da transação
             conn.commit()
+            logger.info(f"Pedido {pedido.id} atualizado com sucesso")
+
             return pedido
 
         except Exception as e:
+            # Rollback em caso de erro
             conn.rollback()
-            raise Exception(f"Erro ao atualizar pedido: {str(e)}")
+            logger.error(f"Erro ao atualizar pedido {pedido.id}: {str(e)}")
+            raise
 
         finally:
+            cursor.close()
             conn.close()
 
-    def obter_por_id(self, id: int) -> Optional[Pedido]:
+    def obter_por_id(self, pedido_id: int) -> Optional[Pedido]:
         """
         Obtém um pedido pelo ID.
         """
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         try:
-            cursor.execute('''
-                SELECT * FROM pedidos WHERE id = ? AND deletado = 0
-            ''', (id,))
+            # Buscar dados do pedido
+            cursor.execute("""
+                SELECT * FROM pedidos
+                WHERE id = %s AND deletado = 0
+            """, (pedido_id,))
 
             pedido_data = cursor.fetchone()
             if not pedido_data:
+                logger.info(f"Pedido {pedido_id} não encontrado")
                 return None
 
-            # Criar cliente
+            # Criar objeto Cliente
             cliente = Cliente(
                 nome=pedido_data['cliente_nome'],
                 telefone=pedido_data['cliente_telefone'],
                 email=pedido_data['cliente_email'],
-                endereco=eval(pedido_data['cliente_endereco']) if pedido_data['cliente_endereco'] else {}
+                endereco=pedido_data['cliente_endereco']
             )
 
-            # Obter itens do pedido
-            cursor.execute('''
-                SELECT ip.*, p.nome 
+            # Buscar itens do pedido
+            cursor.execute("""
+                SELECT ip.*, p.nome
                 FROM itens_pedido ip
                 LEFT JOIN produtos p ON ip.produto_id = p.id
-                WHERE ip.pedido_id = ?
-            ''', (id,))
+                WHERE ip.pedido_id = %s
+            """, (pedido_id,))
 
             itens_data = cursor.fetchall()
             itens = []
 
             for item_data in itens_data:
-                itens.append(ItemPedido(
+                item = ItemPedido(
                     id=item_data['id'],
                     pedido_id=item_data['pedido_id'],
                     produto_id=item_data['produto_id'],
                     quantidade=item_data['quantidade'],
                     preco_unitario=item_data['preco_unitario'],
                     nome=item_data['nome']
-                ))
+                )
+                itens.append(item)
 
-            # Criar pedido
+            # Converter status de string para enum
+            try:
+                status = StatusPedido(pedido_data['status'])
+            except ValueError:
+                # Fallback para Pendente se o status não for reconhecido
+                logger.warning(f"Status não reconhecido: {pedido_data['status']}. Usando 'Pendente'")
+                status = StatusPedido.PENDENTE
+
+            # Converter data de string para datetime
+            try:
+                if isinstance(pedido_data['data_pedido'], str):
+                    data_parts = pedido_data['data_pedido'].split(' ')
+                    data_str = data_parts[0]
+                    hora_str = data_parts[1] if len(data_parts) > 1 else "00:00:00"
+
+                    dia, mes, ano = map(int, data_str.split('/'))
+                    hora, minuto, segundo = map(int, hora_str.split(':'))
+
+                    data_criacao = datetime(ano, mes, dia, hora, minuto, segundo)
+                else:
+                    data_criacao = pedido_data['data_criacao']
+            except (ValueError, IndexError):
+                logger.warning(f"Erro ao converter data: {pedido_data['data_pedido']}. Usando data atual.")
+                data_criacao = datetime.now()
+
+            # Criar objeto Pedido
             pedido = Pedido(
                 id=pedido_data['id'],
                 cliente=cliente,
                 itens=itens,
-                status=StatusPedido(pedido_data['status']),
-                data_criacao=datetime.fromisoformat(pedido_data['data_pedido']),
-                data_atualizacao=datetime.fromisoformat(pedido_data['data_atualizacao']) if pedido_data[
-                    'data_atualizacao'] else None,
-                distribuidor_id=pedido_data['distribuidor_id'],
-                observacoes_cliente=pedido_data['observacoes_cliente'],
-                observacoes_distribuidor=pedido_data['observacoes_distribuidor']
+                status=status,
+                data_criacao=data_criacao
             )
 
+            logger.info(f"Pedido {pedido_id} obtido com sucesso")
             return pedido
 
         except Exception as e:
-            raise Exception(f"Erro ao obter pedido: {str(e)}")
+            logger.error(f"Erro ao obter pedido {pedido_id}: {str(e)}")
+            raise
 
         finally:
+            cursor.close()
             conn.close()
 
-    def listar_por_cliente(self, cliente_id: int) -> List[Pedido]:
+    def listar_todos(self) -> List[Pedido]:
         """
-        Lista todos os pedidos de um cliente.
+        Lista todos os pedidos ativos.
         """
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
 
         try:
-            # Obter usuário para extrair nome/telefone
-            cursor.execute('''
-                SELECT * FROM usuarios WHERE id = ?
-            ''', (cliente_id,))
-
-            usuario = cursor.fetchone()
-            if not usuario:
-                return []
-
-            # Buscar pedidos do cliente
-            cursor.execute('''
-                SELECT * FROM pedidos 
-                WHERE cliente_nome = ? AND cliente_telefone = ? AND deletado = 0
-                ORDER BY data_pedido DESC
-            ''', (usuario['nome'], usuario['telefone']))
+            # Buscar todos os pedidos
+            cursor.execute("""
+                SELECT * FROM pedidos
+                WHERE deletado = 0
+                ORDER BY data_criacao DESC
+            """)
 
             pedidos_data = cursor.fetchall()
             pedidos = []
 
             for pedido_data in pedidos_data:
-                # Criar cliente
+                pedido_id = pedido_data['id']
+
+                # Criar objeto Cliente
                 cliente = Cliente(
                     nome=pedido_data['cliente_nome'],
                     telefone=pedido_data['cliente_telefone'],
                     email=pedido_data['cliente_email'],
-                    endereco=eval(pedido_data['cliente_endereco']) if pedido_data['cliente_endereco'] else {}
+                    endereco=pedido_data['cliente_endereco']
                 )
 
-                # Obter itens do pedido
-                cursor.execute('''
-                    SELECT ip.*, p.nome 
+                # Buscar itens do pedido
+                cursor.execute("""
+                    SELECT ip.*, p.nome
                     FROM itens_pedido ip
                     LEFT JOIN produtos p ON ip.produto_id = p.id
-                    WHERE ip.pedido_id = ?
-                ''', (pedido_data['id'],))
+                    WHERE ip.pedido_id = %s
+                """, (pedido_id,))
 
                 itens_data = cursor.fetchall()
                 itens = []
 
                 for item_data in itens_data:
-                    itens.append(ItemPedido(
+                    item = ItemPedido(
                         id=item_data['id'],
                         pedido_id=item_data['pedido_id'],
                         produto_id=item_data['produto_id'],
                         quantidade=item_data['quantidade'],
                         preco_unitario=item_data['preco_unitario'],
                         nome=item_data['nome']
-                    ))
+                    )
+                    itens.append(item)
 
-                # Criar pedido
+                # Converter status de string para enum
+                try:
+                    status = StatusPedido(pedido_data['status'])
+                except ValueError:
+                    # Fallback para Pendente se o status não for reconhecido
+                    logger.warning(f"Status não reconhecido: {pedido_data['status']}. Usando 'Pendente'")
+                    status = StatusPedido.PENDENTE
+
+                # Converter data de string para datetime
+                try:
+                    if isinstance(pedido_data['data_pedido'], str):
+                        data_parts = pedido_data['data_pedido'].split(' ')
+                        data_str = data_parts[0]
+                        hora_str = data_parts[1] if len(data_parts) > 1 else "00:00:00"
+
+                        dia, mes, ano = map(int, data_str.split('/'))
+                        hora, minuto, segundo = map(int, hora_str.split(':'))
+
+                        data_criacao = datetime(ano, mes, dia, hora, minuto, segundo)
+                    else:
+                        data_criacao = pedido_data['data_criacao']
+                except (ValueError, IndexError):
+                    logger.warning(f"Erro ao converter data: {pedido_data['data_pedido']}. Usando data atual.")
+                    data_criacao = datetime.now()
+
+                # Criar objeto Pedido
                 pedido = Pedido(
                     id=pedido_data['id'],
                     cliente=cliente,
                     itens=itens,
-                    status=StatusPedido(pedido_data['status']),
-                    data_criacao=datetime.fromisoformat(pedido_data['data_pedido']),
-                    data_atualizacao=datetime.fromisoformat(pedido_data['data_atualizacao']) if pedido_data[
-                        'data_atualizacao'] else None,
-                    distribuidor_id=pedido_data['distribuidor_id'],
-                    observacoes_cliente=pedido_data['observacoes_cliente'],
-                    observacoes_distribuidor=pedido_data['observacoes_distribuidor']
+                    status=status,
+                    data_criacao=data_criacao
                 )
 
                 pedidos.append(pedido)
 
+            logger.info(f"Listados {len(pedidos)} pedidos com sucesso")
             return pedidos
 
         except Exception as e:
-            raise Exception(f"Erro ao listar pedidos do cliente: {str(e)}")
+            logger.error(f"Erro ao listar pedidos: {str(e)}")
+            raise
 
         finally:
-            conn.close()
-
-    def listar_por_distribuidor(self, distribuidor_id: int) -> List[Pedido]:
-        """
-        Lista todos os pedidos destinados a um distribuidor.
-        """
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute('''
-                SELECT * FROM pedidos 
-                WHERE distribuidor_id = ? AND deletado = 0
-                ORDER BY data_pedido DESC
-            ''', (distribuidor_id,))
-
-            pedidos_data = cursor.fetchall()
-            pedidos = []
-
-            for pedido_data in pedidos_data:
-                # Criar cliente
-                cliente = Cliente(
-                    nome=pedido_data['cliente_nome'],
-                    telefone=pedido_data['cliente_telefone'],
-                    email=pedido_data['cliente_email'],
-                    endereco=eval(pedido_data['cliente_endereco']) if pedido_data['cliente_endereco'] else {}
-                )
-
-                # Obter itens do pedido
-                cursor.execute('''
-                    SELECT ip.*, p.nome 
-                    FROM itens_pedido ip
-                    LEFT JOIN produtos p ON ip.produto_id = p.id
-                    WHERE ip.pedido_id = ?
-                ''', (pedido_data['id'],))
-
-                itens_data = cursor.fetchall()
-                itens = []
-
-                for item_data in itens_data:
-                    itens.append(ItemPedido(
-                        id=item_data['id'],
-                        pedido_id=item_data['pedido_id'],
-                        produto_id=item_data['produto_id'],
-                        quantidade=item_data['quantidade'],
-                        preco_unitario=item_data['preco_unitario'],
-                        nome=item_data['nome']
-                    ))
-
-                # Criar pedido
-                pedido = Pedido(
-                    id=pedido_data['id'],
-                    cliente=cliente,
-                    itens=itens,
-                    status=StatusPedido(pedido_data['status']),
-                    data_criacao=datetime.fromisoformat(pedido_data['data_pedido']),
-                    data_atualizacao=datetime.fromisoformat(pedido_data['data_atualizacao']) if pedido_data[
-                        'data_atualizacao'] else None,
-                    distribuidor_id=pedido_data['distribuidor_id'],
-                    observacoes_cliente=pedido_data['observacoes_cliente'],
-                    observacoes_distribuidor=pedido_data['observacoes_distribuidor']
-                )
-
-                pedidos.append(pedido)
-
-            return pedidos
-
-        except Exception as e:
-            raise Exception(f"Erro ao listar pedidos do distribuidor: {str(e)}")
-
-        finally:
+            cursor.close()
             conn.close()
