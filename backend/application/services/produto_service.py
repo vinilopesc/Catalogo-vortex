@@ -1,72 +1,98 @@
 """
-Módulo de serviço para operações relacionadas a produtos.
-Segue o padrão Service do DDD, implementando casos de uso
-relacionados ao gerenciamento de produtos no sistema.
+Serviço de aplicação para operações relacionadas a produtos.
+Implementa a interface ProdutoServiceInterface.
 """
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import os
+import logging
 from werkzeug.utils import secure_filename
 import uuid
-import pandas as pd
-from io import BytesIO
-import tempfile
 
+from backend.application.interfaces.produto_service_interface import ProdutoServiceInterface
 from backend.domain.models.produto import Produto
-from backend.infrastructure.interfaces.repositories.produto_repository import ProdutoRepository
+from backend.infrastructure.repositories.produto_repository_interface import ProdutoRepositoryInterface
+from backend.domain.exceptions.domain_exceptions import ProdutoNaoEncontradoException
 
+# Configurar logger
+logger = logging.getLogger(__name__)
 
-class ProdutoService:
+class ProdutoService(ProdutoServiceInterface):
     """
     Serviço para gerenciamento de produtos no sistema.
-    Implementa casos de uso relacionados a produtos.
     """
-    
-    def __init__(self):
+
+    def __init__(self, produto_repository: ProdutoRepositoryInterface):
         """
         Inicializa o serviço de produtos.
+
+        Args:
+            produto_repository: Repositório de produtos
         """
-        self.produto_repository = ProdutoRepository()
-    
+        self.produto_repository = produto_repository
+
     def listar_produtos(self) -> List[Dict[str, Any]]:
         """
         Lista todos os produtos ativos no sistema.
-        
+
         Returns:
             List[Dict[str, Any]]: Lista de produtos em formato de dicionário
         """
-        produtos = self.produto_repository.listar_todos()
-        return [produto.to_dict() for produto in produtos]
-    
+        try:
+            logger.info("Listando todos os produtos ativos")
+            produtos = self.produto_repository.listar_todos()
+            return [produto.to_dict() for produto in produtos]
+        except Exception as e:
+            logger.error(f"Erro ao listar produtos: {str(e)}")
+            raise
+
     def obter_produto_por_id(self, produto_id: int) -> Optional[Dict[str, Any]]:
         """
         Obtém um produto pelo seu ID.
-        
+
         Args:
-            produto_id (int): ID do produto a ser obtido
-            
+            produto_id: ID do produto
+
         Returns:
-            Optional[Dict[str, Any]]: Produto encontrado ou None
+            Optional[Dict[str, Any]]: Produto em formato de dicionário ou None
         """
-        produto = self.produto_repository.obter_por_id(produto_id)
-        return produto.to_dict() if produto else None
-    
+        try:
+            logger.info(f"Buscando produto com ID {produto_id}")
+            produto = self.produto_repository.obter_por_id(produto_id)
+
+            if not produto:
+                logger.warning(f"Produto com ID {produto_id} não encontrado")
+                return None
+
+            return produto.to_dict()
+        except Exception as e:
+            logger.error(f"Erro ao obter produto {produto_id}: {str(e)}")
+            raise
+
     def criar_produto(self, dados: Dict[str, Any]) -> Dict[str, Any]:
         """
         Cria um novo produto no sistema.
-        
+
         Args:
-            dados (Dict[str, Any]): Dados do produto a ser criado
-            
+            dados: Dados do produto a ser criado
+
         Returns:
             Dict[str, Any]: Produto criado com ID atribuído
-            
-        Raises:
-            ValueError: Se os dados fornecidos forem inválidos
         """
-        # Validações e criação do produto
         try:
+            logger.info(f"Criando novo produto: {dados.get('nome')}")
+
+            # Validações
+            if not dados.get('nome'):
+                logger.error("Nome do produto é obrigatório")
+                raise ValueError("Nome do produto é obrigatório")
+
+            if 'preco' in dados and (not isinstance(dados['preco'], (int, float)) or dados['preco'] < 0):
+                logger.error("Preço deve ser um número positivo")
+                raise ValueError("Preço deve ser um número positivo")
+
+            # Criar entidade produto
             produto = Produto(
                 id=None,
                 nome=dados.get('nome'),
@@ -75,258 +101,105 @@ class ProdutoService:
                 quantidade_estoque=int(dados.get('quantidade_estoque', 0)),
                 imagem_url=dados.get('imagem_url')
             )
-            
-            produto = self.produto_repository.criar(produto)
-            return produto.to_dict()
+
+            # Persistir produto
+            produto_salvo = self.produto_repository.criar(produto)
+            logger.info(f"Produto criado com sucesso. ID: {produto_salvo.id}")
+
+            return produto_salvo.to_dict()
+        except ValueError as e:
+            logger.error(f"Erro de validação ao criar produto: {str(e)}")
+            raise
         except Exception as e:
-            raise ValueError(f"Erro ao criar produto: {str(e)}")
-    
+            logger.error(f"Erro ao criar produto: {str(e)}")
+            raise
+
     def atualizar_produto(self, produto_id: int, dados: Dict[str, Any]) -> Dict[str, Any]:
         """
         Atualiza um produto existente.
-        
+
         Args:
-            produto_id (int): ID do produto a ser atualizado
-            dados (Dict[str, Any]): Novos dados do produto
-            
+            produto_id: ID do produto a ser atualizado
+            dados: Novos dados do produto
+
         Returns:
             Dict[str, Any]: Produto atualizado
-            
+
         Raises:
-            ValueError: Se o produto não existir ou os dados forem inválidos
+            ProdutoNaoEncontradoException: Se o produto não existir
         """
-        produto = self.produto_repository.obter_por_id(produto_id)
-        if not produto:
-            raise ValueError(f"Produto com ID {produto_id} não encontrado")
-            
-        # Atualizar apenas os campos fornecidos
-        if 'nome' in dados:
-            produto.nome = dados['nome']
-        if 'descricao' in dados:
-            produto.descricao = dados['descricao']
-        if 'preco' in dados:
-            produto.preco = float(dados['preco'])
-        if 'quantidade_estoque' in dados:
-            produto.quantidade_estoque = int(dados['quantidade_estoque'])
-        if 'imagem_url' in dados:
-            produto.imagem_url = dados['imagem_url']
-            
-        produto = self.produto_repository.atualizar(produto)
-        return produto.to_dict()
-    
+        try:
+            logger.info(f"Atualizando produto ID {produto_id}")
+
+            # Buscar produto existente
+            produto = self.produto_repository.obter_por_id(produto_id)
+            if not produto:
+                logger.error(f"Produto com ID {produto_id} não encontrado")
+                raise ProdutoNaoEncontradoException(produto_id)
+
+            # Atualizar apenas os campos fornecidos
+            if 'nome' in dados:
+                produto.nome = dados['nome']
+
+            if 'descricao' in dados:
+                produto.descricao = dados['descricao']
+
+            if 'preco' in dados:
+                produto.preco = float(dados['preco'])
+
+            if 'quantidade_estoque' in dados:
+                produto.quantidade_estoque = int(dados['quantidade_estoque'])
+
+            if 'imagem_url' in dados:
+                produto.imagem_url = dados['imagem_url']
+
+            # Persistir alterações
+            produto_atualizado = self.produto_repository.atualizar(produto)
+            logger.info(f"Produto ID {produto_id} atualizado com sucesso")
+
+            return produto_atualizado.to_dict()
+        except ProdutoNaoEncontradoException:
+            raise
+        except ValueError as e:
+            logger.error(f"Erro de validação ao atualizar produto {produto_id}: {str(e)}")
+            raise
+        except Exception as e:
+            logger.error(f"Erro ao atualizar produto {produto_id}: {str(e)}")
+            raise
+
     def excluir_produto(self, produto_id: int) -> bool:
         """
         Exclui (logicamente) um produto do sistema.
-        
-        Args:
-            produto_id (int): ID do produto a ser excluído
-            
-        Returns:
-            bool: True se a exclusão foi bem-sucedida, False caso contrário
-            
-        Raises:
-            ValueError: Se o produto não existir
-        """
-        produto = self.produto_repository.obter_por_id(produto_id)
-        if not produto:
-            raise ValueError(f"Produto com ID {produto_id} não encontrado")
-            
-        return self.produto_repository.excluir(produto_id)
-    
-    def processar_imagem_produto(self, imagem, diretorio_upload: str) -> Optional[str]:
-        """
-        Processa o upload de uma imagem para um produto.
-        
-        Args:
-            imagem: Objeto de arquivo da imagem enviada
-            diretorio_upload (str): Caminho para o diretório de upload
-            
-        Returns:
-            Optional[str]: URL da imagem ou None se não houver imagem
-        """
-        if not imagem or imagem.filename == '':
-            return None
-            
-        filename = secure_filename(f"{uuid.uuid4().hex}_{imagem.filename}")
-        filepath = os.path.join(diretorio_upload, filename)
-        imagem.save(filepath)
-        
-        # Retornar caminho relativo para a imagem
-        return f"/static/images/produtos/{filename}"
-        
-    def exportar_estoque_para_excel(self) -> str:
-        """
-        Exporta todos os produtos do estoque para uma planilha Excel.
-        
-        Returns:
-            str: Caminho do arquivo Excel gerado
-            
-        Raises:
-            Exception: Se ocorrer um erro ao gerar o arquivo
-        """
-        try:
-            # Obter todos os produtos ativos
-            produtos = self.produto_repository.listar_todos()
-            
-            # Converter produtos para lista de dicionários para o pandas
-            dados_produtos = []
-            for produto in produtos:
-                dados_produtos.append({
-                    "ID": produto.id,
-                    "Nome": produto.nome,
-                    "Descrição": produto.descricao,
-                    "Preço (R$)": produto.preco,
-                    "Quantidade em Estoque": produto.quantidade_estoque,
-                    "Valor Total (R$)": produto.preco * produto.quantidade_estoque,
-                    "URL da Imagem": produto.imagem_url
-                })
-            
-            # Criar DataFrame pandas
-            df = pd.DataFrame(dados_produtos)
-            
-            # Criar diretório para exportações se não existir
-            diretorio_export = os.path.join(os.getcwd(), "backend", "static", "exports")
-            os.makedirs(diretorio_export, exist_ok=True)
-            
-            # Gerar nome de arquivo com timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            nome_arquivo = f"estoque_{timestamp}.xlsx"
-            caminho_arquivo = os.path.join(diretorio_export, nome_arquivo)
-            
-            # Criar um ExcelWriter
-            writer = pd.ExcelWriter(caminho_arquivo, engine='xlsxwriter')
-            
-            # Escrever o DataFrame no Excel
-            df.to_excel(writer, sheet_name='Estoque', index=False)
-            
-            # Acessar a planilha e o workbook
-            workbook = writer.book
-            worksheet = writer.sheets['Estoque']
-            
-            # Definir formatos
-            formato_moeda = workbook.add_format({'num_format': 'R$ #,##0.00'})
-            formato_quantidade = workbook.add_format({'num_format': '#,##0'})
-            formato_cabecalho = workbook.add_format({
-                'bold': True,
-                'bg_color': '#D9E1F2',
-                'border': 1
-            })
-            
-            # Aplicar formatos
-            worksheet.set_column('D:D', 15, formato_moeda)  # Preço
-            worksheet.set_column('E:E', 15, formato_quantidade)  # Quantidade
-            worksheet.set_column('F:F', 15, formato_moeda)  # Valor Total
-            worksheet.set_column('A:A', 8)   # ID
-            worksheet.set_column('B:B', 30)  # Nome
-            worksheet.set_column('C:C', 40)  # Descrição
-            worksheet.set_column('G:G', 40)  # URL da Imagem
-            
-            # Aplicar formato de cabeçalho
-            for col_num, value in enumerate(df.columns.values):
-                worksheet.write(0, col_num, value, formato_cabecalho)
-            
-            # Adicionar filtros
-            worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
-            
-            # Adicionar uma linha de totais no final
-            row_totais = len(df) + 2
-            worksheet.write(row_totais, 0, 'TOTAIS', workbook.add_format({'bold': True}))
-            worksheet.write_formula(row_totais, 4, f'=SUM(E2:E{len(df)+1})', formato_quantidade)
-            worksheet.write_formula(row_totais, 5, f'=SUM(F2:F{len(df)+1})', formato_moeda)
-            
-            # Adicionar data de geração
-            worksheet.write(row_totais + 2, 0, f'Relatório gerado em: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}')
-            
-            # Salvar o arquivo
-            writer.close()
-            
-            # Retornar caminho do arquivo para download
-            return f"/static/exports/{nome_arquivo}"
-            
-        except Exception as e:
-            raise Exception(f"Erro ao exportar estoque para Excel: {str(e)}")
 
-    def exportar_estoque_para_excel_bytes(self) -> BytesIO:
-        """
-        Exporta todos os produtos do estoque para um objeto BytesIO contendo uma planilha Excel.
-        Útil para retornar diretamente como resposta HTTP sem salvar arquivo.
-        
+        Args:
+            produto_id: ID do produto a ser excluído
+
         Returns:
-            BytesIO: Objeto contendo o arquivo Excel em memória
-            
+            bool: True se a exclusão foi bem-sucedida
+
         Raises:
-            Exception: Se ocorrer um erro ao gerar o arquivo
+            ProdutoNaoEncontradoException: Se o produto não existir
         """
         try:
-            # Obter todos os produtos ativos
-            produtos = self.produto_repository.listar_todos()
-            
-            # Converter produtos para lista de dicionários para o pandas
-            dados_produtos = []
-            for produto in produtos:
-                dados_produtos.append({
-                    "ID": produto.id,
-                    "Nome": produto.nome,
-                    "Descrição": produto.descricao,
-                    "Preço (R$)": produto.preco,
-                    "Quantidade em Estoque": produto.quantidade_estoque,
-                    "Valor Total (R$)": produto.preco * produto.quantidade_estoque,
-                    "URL da Imagem": produto.imagem_url
-                })
-            
-            # Criar DataFrame pandas
-            df = pd.DataFrame(dados_produtos)
-            
-            # Criar objeto BytesIO para guardar o Excel em memória
-            output = BytesIO()
-            
-            # Criar um ExcelWriter
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Escrever o DataFrame no Excel
-                df.to_excel(writer, sheet_name='Estoque', index=False)
-                
-                # Acessar a planilha e o workbook
-                workbook = writer.book
-                worksheet = writer.sheets['Estoque']
-                
-                # Definir formatos
-                formato_moeda = workbook.add_format({'num_format': 'R$ #,##0.00'})
-                formato_quantidade = workbook.add_format({'num_format': '#,##0'})
-                formato_cabecalho = workbook.add_format({
-                    'bold': True,
-                    'bg_color': '#D9E1F2',
-                    'border': 1
-                })
-                
-                # Aplicar formatos
-                worksheet.set_column('D:D', 15, formato_moeda)  # Preço
-                worksheet.set_column('E:E', 15, formato_quantidade)  # Quantidade
-                worksheet.set_column('F:F', 15, formato_moeda)  # Valor Total
-                worksheet.set_column('A:A', 8)   # ID
-                worksheet.set_column('B:B', 30)  # Nome
-                worksheet.set_column('C:C', 40)  # Descrição
-                worksheet.set_column('G:G', 40)  # URL da Imagem
-                
-                # Aplicar formato de cabeçalho
-                for col_num, value in enumerate(df.columns.values):
-                    worksheet.write(0, col_num, value, formato_cabecalho)
-                
-                # Adicionar filtros
-                worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
-                
-                # Adicionar uma linha de totais no final
-                row_totais = len(df) + 2
-                worksheet.write(row_totais, 0, 'TOTAIS', workbook.add_format({'bold': True}))
-                worksheet.write_formula(row_totais, 4, f'=SUM(E2:E{len(df)+1})', formato_quantidade)
-                worksheet.write_formula(row_totais, 5, f'=SUM(F2:F{len(df)+1})', formato_moeda)
-                
-                # Adicionar data de geração
-                worksheet.write(row_totais + 2, 0, f'Relatório gerado em: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}')
-            
-            # Reposicionar o ponteiro para o início do arquivo em memória
-            output.seek(0)
-            
-            return output
-            
+            logger.info(f"Excluindo produto ID {produto_id}")
+
+            # Verificar se o produto existe
+            produto = self.produto_repository.obter_por_id(produto_id)
+            if not produto:
+                logger.error(f"Produto com ID {produto_id} não encontrado")
+                raise ProdutoNaoEncontradoException(produto_id)
+
+            # Excluir logicamente
+            resultado = self.produto_repository.excluir(produto_id)
+
+            if resultado:
+                logger.info(f"Produto ID {produto_id} excluído com sucesso")
+            else:
+                logger.warning(f"Falha ao excluir produto ID {produto_id}")
+
+            return resultado
+        except ProdutoNaoEncontradoException:
+            raise
         except Exception as e:
-            raise Exception(f"Erro ao exportar estoque para Excel: {str(e)}") 
+            logger.error(f"Erro ao excluir produto {produto_id}: {str(e)}")
+            raise

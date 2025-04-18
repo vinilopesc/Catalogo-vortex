@@ -4,8 +4,8 @@ from datetime import datetime
 
 from backend.domain.models.pedido import Pedido, ItemPedido, StatusPedido
 from backend.domain.models.cliente import Cliente
-from backend.infrastructure.interfaces.repositories.pedido_repository import PedidoRepository
-from backend.infrastructure.interfaces.repositories.produto_repository import ProdutoRepository
+from backend.infrastructure.repositories.pedido_repository import PedidoRepository
+from backend.infrastructure.repositories.produto_repository import ProdutoRepository
 import logging
 
 # Configurar logger

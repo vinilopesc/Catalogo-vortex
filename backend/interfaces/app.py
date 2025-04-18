@@ -1,49 +1,80 @@
 """
-Ponto de entrada principal da aplicação.
-
-Inicializa o app Flask importando a instância do módulo app_ddd_sql.
+Módulo principal para criação e configuração da aplicação Flask.
 """
 
-import sys
-from pathlib import Path
+from flask import Flask, render_template, request, session
 import os
 import logging
+from datetime import datetime
 
-# Adicionar o diretório raiz ao path do Python
-root_dir = Path(__file__).resolve().parent
-sys.path.append(str(root_dir))
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-# Configurar o logger
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("app")
+def create_app():
+    """
+    Cria e configura a aplicação Flask.
 
-# Verificar diretórios importantes
-os.makedirs('frontend/static/images/produtos', exist_ok=True)
-os.makedirs('frontend/static/css', exist_ok=True)
-os.makedirs('frontend/static/js', exist_ok=True)
+    Returns:
+        Flask: Aplicação Flask configurada
+    """
+    # Instanciar aplicação
+    app = Flask(
+        __name__,
+        template_folder='../../frontend/templates',
+        static_folder='../../frontend/static'
+    )
 
-# Importar o gerenciador de banco de dados e configurar o schema
-logger.info("Verificando estrutura do banco de dados...")
-from backend.infrastructure.db.db_manager import setup_database
+    # Configurar app
+    app.secret_key = os.getenv("APP_SECRET_KEY", "vortex")
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 
-if not setup_database():
-    logger.error("Falha na inicialização do banco de dados. A aplicação pode não funcionar corretamente.")
-else:
-    logger.info("Banco de dados verificado e pronto!")
+    # Adicionar variáveis de contexto global para templates
+    @app.context_processor
+    def adicionar_variaveis_globais():
+        """Adiciona variáveis de contexto global para todos os templates"""
+        from datetime import datetime
+        # Por padrão, sem notificações
+        return {
+            'notification_count': 0,
+            'notifications': [],
+            'current_year': datetime.now().year,
+            'app_version': '1.0.0'
+        }
 
-# Importar a instância da aplicação - CORRIGIDO
-from backend.interfaces.app_ddd_sql import app  # Caminho correto
+    # Registrar blueprints
+    from backend.interfaces.api.produtos_blueprint import produtos_bp
+    from backend.interfaces.api.pedidos_blueprint import pedidos_bp
+    from backend.interfaces.api.usuarios_blueprint import usuarios_bp
+    from backend.interfaces.web.controllers.paginas_controller import paginas_bp
 
-if __name__ == '__main__':
-    # Obter porta da variável de ambiente ou usar 5000 como padrão
-    port = int(os.environ.get('PORT', 5000))
+    app.register_blueprint(produtos_bp)
+    app.register_blueprint(pedidos_bp)
+    app.register_blueprint(usuarios_bp)
+    app.register_blueprint(paginas_bp)
 
-    # Configurar modo de depuração baseado em variável de ambiente
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    # Configurar handlers de erro
+    @app.errorhandler(404)
+    def pagina_nao_encontrada(e):
+        """Página de erro 404"""
+        return render_template("404.html", url=request.path), 404
 
-    logger.info(f"Iniciando aplicação Catálogo Vortex na porta {port}...")
-    logger.info(f"Modo de depuração: {'ATIVADO' if debug_mode else 'DESATIVADO'}")
-    logger.info(f"Acesse a aplicação em http://localhost:{port}/")
+    @app.errorhandler(500)
+    def erro_interno(e):
+        """Página de erro 500"""
+        return render_template("erro.html", mensagem="Ocorreu um erro interno no servidor."), 500
 
-    # Iniciar o servidor
-    app.run(host='0.0.0.0', port=port, debug=debug_mode)
+    # Garantir que os diretórios importantes existam
+    os.makedirs('frontend/static/images/produtos', exist_ok=True)
+    os.makedirs('frontend/static/css', exist_ok=True)
+    os.makedirs('frontend/static/js', exist_ok=True)
+
+    logger.info("Aplicação Flask configurada com sucesso")
+    return app
