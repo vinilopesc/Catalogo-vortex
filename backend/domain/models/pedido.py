@@ -3,7 +3,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Optional
 from datetime import datetime
-from .cliente import Cliente
+from backend.domain.models.cliente import Cliente
 
 
 class StatusPedido(Enum):

@@ -2,10 +2,10 @@
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from backend.domain.pedido import Pedido, ItemPedido, StatusPedido
-from backend.domain.cliente import Cliente
-from backend.infrastructure.repositories.pedido_repository import PedidoRepository
-from backend.infrastructure.repositories.produto_repository import ProdutoRepository
+from backend.domain.models.pedido import Pedido, ItemPedido, StatusPedido
+from backend.domain.models.cliente import Cliente
+from backend.infrastructure.interfaces.repositories.pedido_repository import PedidoRepository
+from backend.infrastructure.interfaces.repositories.produto_repository import ProdutoRepository
 import logging
 
 # Configurar logger

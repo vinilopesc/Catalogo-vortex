@@ -24,7 +24,7 @@ os.makedirs('frontend/static/js', exist_ok=True)
 
 # Importar o gerenciador de banco de dados e configurar o schema
 logger.info("Verificando estrutura do banco de dados...")
-from backend.infrastructure.db_manager import setup_database
+from backend.infrastructure.db.db_manager import setup_database
 
 if not setup_database():
     logger.error("Falha na inicialização do banco de dados. A aplicação pode não funcionar corretamente.")

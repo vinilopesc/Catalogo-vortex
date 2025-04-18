@@ -9,7 +9,7 @@ import logging
 import bcrypt
 from datetime import datetime
 from dotenv import load_dotenv
-from backend.infrastructure.config_db import get_db_connection
+from backend.infrastructure.db.config_db import get_db_connection
 from werkzeug.utils import secure_filename
 import uuid
 

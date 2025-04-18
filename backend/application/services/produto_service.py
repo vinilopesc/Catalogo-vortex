@@ -13,8 +13,8 @@ import pandas as pd
 from io import BytesIO
 import tempfile
 
-from backend.domain.produto import Produto
-from backend.infrastructure.repositories.produto_repository import ProdutoRepository
+from backend.domain.models.produto import Produto
+from backend.infrastructure.interfaces.repositories.produto_repository import ProdutoRepository
 
 
 class ProdutoService:

@@ -3,9 +3,9 @@ from typing import List, Optional, Dict, Any
 import logging
 from datetime import datetime
 
-from backend.domain.pedido import Pedido, ItemPedido, StatusPedido
-from backend.domain.cliente import Cliente
-from backend.infrastructure.config_db import get_db_connection
+from backend.domain.models.pedido import Pedido, ItemPedido, StatusPedido
+from backend.domain.models.cliente import Cliente
+from backend.infrastructure.db.config_db import get_db_connection
 
 # Configurar logger
 logger = logging.getLogger(__name__)

@@ -7,8 +7,8 @@ import logging
 from typing import List, Optional
 from datetime import datetime
 
-from backend.domain.produto import Produto
-from backend.infrastructure.db_manager import execute_query
+from backend.domain.models.produto import Produto
+from backend.infrastructure.db.db_manager import execute_query
 
 # Configurar logger
 logger = logging.getLogger(__name__)

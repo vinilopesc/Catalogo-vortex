@@ -7,8 +7,8 @@ import bcrypt
 import logging
 import traceback
 from datetime import datetime
-from backend.domain.usuario import Usuario
-from backend.infrastructure.config_db import get_db_connection
+from backend.domain.models.usuario import Usuario
+from backend.infrastructure.db.config_db import get_db_connection
 
 # Configuração de logging
 logger = logging.getLogger("usuario_services")

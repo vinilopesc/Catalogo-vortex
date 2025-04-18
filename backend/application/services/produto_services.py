@@ -3,7 +3,7 @@ Serviços da camada de aplicação para operações com produtos.
 Camada: Application
 """
 
-from backend.domain.produto import Produto
+from backend.domain.models.produto import Produto
 from typing import List
 
 class CadastrarProdutoService:

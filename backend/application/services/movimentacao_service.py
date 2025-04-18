@@ -7,10 +7,10 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from backend.domain.entities.movimentacao import Movimentacao, TipoMovimentacao
-from backend.domain.produto import Produto
-from backend.infrastructure.repositories.movimentacao_repository import MovimentacaoRepository
-from backend.infrastructure.repositories.produto_repository import ProdutoRepository
+from backend.domain.models.movimentacao import Movimentacao, TipoMovimentacao
+from backend.domain.models.produto import Produto
+from backend.infrastructure.interfaces.repositories.movimentacao_repository import MovimentacaoRepository
+from backend.infrastructure.interfaces.repositories.produto_repository import ProdutoRepository
 
 # Configurar logger
 logger = logging.getLogger(__name__)

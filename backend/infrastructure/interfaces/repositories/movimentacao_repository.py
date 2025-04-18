@@ -7,8 +7,8 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from backend.domain.entities.movimentacao import Movimentacao, TipoMovimentacao
-from backend.infrastructure.db_manager import execute_query
+from backend.domain.models.movimentacao import Movimentacao, TipoMovimentacao
+from backend.infrastructure.db.db_manager import execute_query
 
 # Configurar logger
 logger = logging.getLogger(__name__)
